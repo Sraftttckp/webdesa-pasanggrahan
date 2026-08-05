@@ -5,7 +5,7 @@ import {
   Store, UserCheck, Settings, Download, Plus, Trash2, 
   LayoutDashboard, FileText, Lock, ArrowLeft,
   Sprout, Mountain, Droplets, Camera, ShoppingBag, Calendar, User, ExternalLink, TrendingUp,
-  Eye, Info
+  Eye, Info, Activity, UserPlus, UserMinus, Home
 } from 'lucide-react';
 
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts';
@@ -92,7 +92,14 @@ const LogoKonservasi = () => (
   </div>
 );
 
-// --- DATA INITIAL ---
+// --- DATA INITIAL REAL ---
+const STATS_POPULASI_REAL = {
+  totalPenduduk: 21969,
+  kelahiranTahunIni: 120,
+  kematianTahunIni: 35,
+  jumlahKK: 6420
+};
+
 const DATA_TREN_PENDUDUK = [
   { tahun: '2022', jumlah: 20100 },
   { tahun: '2023', jumlah: 20600 },
@@ -856,7 +863,7 @@ export function PublicPortal() {
   return (
     <div className="scroll-smooth min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col justify-between">
       <div>
-        {/* NAVBAR UTAMA (TULISAN DATA WARGA SUDAH DIHAPUS) */}
+        {/* NAVBAR UTAMA RINGKAS DAN TIDAK RAME */}
         <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100 px-6 py-3.5 shadow-sm">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -871,15 +878,15 @@ export function PublicPortal() {
               </div>
             </div>
             
+            {/* Navigasi Rapi & Diringkas */}
             <div className="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-600">
               <a href="#hero" className="hover:text-emerald-700 transition">Beranda</a>
+              <a href="#demografi-real" className="hover:text-emerald-700 transition">Populasi</a>
               <a href="#konservasi" className="hover:text-emerald-700 transition">Konservasi</a>
-              <a href="#peta" className="hover:text-emerald-700 transition">Pemetaan Wilayah</a>
-              <a href="#umkm" className="hover:text-emerald-700 transition">Katalog UMKM</a>
-              <a href="#mading" className="hover:text-emerald-700 transition">Info Mading &amp; Berita Visual</a>
-              <a href="#cctv" className="hover:text-emerald-700 transition">CCTV</a>
-              <a href="#aparat" className="hover:text-emerald-700 transition">Aparat Desa</a>
-              <a href="#lapor" className="hover:text-emerald-700 transition">Pengaduan</a>
+              <a href="#peta" className="hover:text-emerald-700 transition">Wilayah</a>
+              <a href="#umkm" className="hover:text-emerald-700 transition">Eko-UMKM</a>
+              <a href="#mading" className="hover:text-emerald-700 transition">Mading</a>
+              <a href="#lapor" className="hover:text-emerald-700 transition">Lapor</a>
               
               <button 
                 onClick={() => setCurrentView('ADMIN_LOGIN')}
@@ -920,6 +927,50 @@ export function PublicPortal() {
               <a href="#lapor" className="bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold px-7 py-3.5 rounded-2xl transition-all text-xs uppercase tracking-wider backdrop-blur-md flex items-center gap-2">
                 <Shield className="w-4 h-4" /> Lapor Isu Lingkungan
               </a>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION POPULASI REAL PENDUDUK (DIKEMBALIKAN) */}
+        <section id="demografi-real" className="py-12 bg-white border-b border-emerald-100">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center max-w-xl mx-auto mb-8 space-y-1">
+              <span className="text-[11px] font-extrabold text-emerald-700 tracking-wider uppercase">Data Real-Time</span>
+              <h2 className="text-2xl font-black text-slate-900">Demografi &amp; Populasi Penduduk</h2>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="bg-emerald-50/60 border border-emerald-100 p-6 rounded-3xl text-center space-y-2">
+                <div className="w-10 h-10 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto">
+                  <Users className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-black text-slate-900">{STATS_POPULASI_REAL.totalPenduduk.toLocaleString('id-ID')}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Penduduk (Jiwa)</p>
+              </div>
+
+              <div className="bg-blue-50/60 border border-blue-100 p-6 rounded-3xl text-center space-y-2">
+                <div className="w-10 h-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-black text-slate-900">+{STATS_POPULASI_REAL.kelahiranTahunIni}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kelahiran (Tahun Ini)</p>
+              </div>
+
+              <div className="bg-amber-50/60 border border-amber-100 p-6 rounded-3xl text-center space-y-2">
+                <div className="w-10 h-10 bg-amber-600 text-white rounded-2xl flex items-center justify-center mx-auto">
+                  <UserMinus className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-black text-slate-900">{STATS_POPULASI_REAL.kematianTahunIni}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kematian (Tahun Ini)</p>
+              </div>
+
+              <div className="bg-purple-50/60 border border-purple-100 p-6 rounded-3xl text-center space-y-2">
+                <div className="w-10 h-10 bg-purple-600 text-white rounded-2xl flex items-center justify-center mx-auto">
+                  <Home className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-black text-slate-900">{STATS_POPULASI_REAL.jumlahKK.toLocaleString('id-ID')}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kepala Keluarga (KK)</p>
+              </div>
             </div>
           </div>
         </section>
@@ -1057,7 +1108,6 @@ export function PublicPortal() {
 
                 <div className="px-6 pb-6 pt-2 border-t border-slate-100 flex justify-between items-center">
                   <span className="text-base font-black text-emerald-700">{item.harga}</span>
-                  {/* TOMBOL DIGANTI JADI "LIHAT DETAIL" */}
                   <span className="text-xs bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
                     <Eye className="w-3.5 h-3.5" /> Lihat Detail
                   </span>
@@ -1067,7 +1117,7 @@ export function PublicPortal() {
           </div>
         </section>
 
-        {/* INFO MADING & BERITA VISUAL (DESAIN BERITA VISUAL BARU DENGAN GAMBAR TAMPIL TEBAL) */}
+        {/* INFO MADING & BERITA VISUAL */}
         <section id="mading" className="py-20 px-6 max-w-7xl mx-auto border-t border-slate-200">
           <div className="mb-10 space-y-2">
             <span className="text-xs font-bold text-emerald-700 tracking-wider uppercase">Visual Mading Interaktif</span>
@@ -1082,7 +1132,6 @@ export function PublicPortal() {
                 className="bg-white rounded-3xl border border-slate-200 overflow-hidden hover:border-emerald-500 cursor-pointer transition-all shadow-md group flex flex-col justify-between"
               >
                 <div>
-                  {/* TAMPILAN GAMBAR VISUAL MADING LEBIH TEGAS */}
                   <div className="h-64 overflow-hidden relative">
                     <img src={item.gambar} alt={item.judul} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent"></div>
@@ -1265,6 +1314,7 @@ export function PublicPortal() {
             <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px] text-emerald-400">Navigasi</h5>
             <ul className="space-y-2 text-emerald-300">
               <li><a href="#hero" className="hover:text-white transition">Beranda</a></li>
+              <li><a href="#demografi-real" className="hover:text-white transition">Populasi</a></li>
               <li><a href="#peta" className="hover:text-white transition">Pemetaan Wilayah</a></li>
               <li><a href="#umkm" className="hover:text-white transition">Katalog UMKM</a></li>
               <li><a href="#mading" className="hover:text-white transition">Info Mading &amp; Berita</a></li>
@@ -1286,7 +1336,7 @@ export function PublicPortal() {
         </div>
       </footer>
 
-      {/* MODAL DETAILED UMKM DENGAN RINCIAN LENGKAP */}
+      {/* MODAL DETAILED UMKM */}
       {selectedUmkm && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4 p-6 relative">
