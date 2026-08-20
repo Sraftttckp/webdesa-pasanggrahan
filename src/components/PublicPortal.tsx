@@ -1,23 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
-  Trees, Leaf, Shield, MapPin, Users, Video, 
-  ChevronRight, Send, X, Phone, Mail,
+  Trees, Leaf, MapPin, Users, Video, 
+  ChevronRight, ChevronLeft, Send, X, Phone, Mail,
   Store, UserCheck, Download, Plus, Trash2, 
   LayoutDashboard, FileText, Lock, ArrowLeft,
-  Sprout, Mountain, Droplets, Camera, ShoppingBag, Calendar, User,
-  Home, Menu, Eye, Compass, Globe, Waves, Sparkles, Maximize2, Play,
-  ArrowUp, Sun, Wind, CloudRain, Flower2, Bird, ShieldCheck, Cloud
+  Sprout, Mountain, Droplets, Sparkles, Maximize2,
+  Sun, Wind, Bird, ShieldCheck, Cloud,
+  Layers, Sliders, Radio, AlertTriangle, CheckCircle, RefreshCw,
+  Eye, Compass, Globe, Waves, Flower2, Camera, Home, Menu, User, Gauge,
+  Heart, ExternalLink, Shield
 } from 'lucide-react';
 
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts';
 
-// --- STYLES ANIMASI INLINE CSS ---
+// --- STYLES ANIMASI INLINE CSS & TRANSISI SMOOTH POP-UP ---
 const AnimationStyles = () => (
   <style>{`
     @keyframes fadeInUp {
       from {
         opacity: 0;
-        transform: translateY(24px);
+        transform: translateY(20px);
       }
       to {
         opacity: 1;
@@ -28,19 +30,32 @@ const AnimationStyles = () => (
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    @keyframes popIn {
+      0% { 
+        opacity: 0; 
+        transform: scale(0.92) translateY(10px); 
+      }
+      100% { 
+        opacity: 1; 
+        transform: scale(1) translateY(0); 
+      }
+    }
     @keyframes floatSlow {
       0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-8px); }
+      50% { transform: translateY(-6px); }
     }
     @keyframes pulseGlow {
       0%, 100% { opacity: 0.4; transform: scale(1); }
       50% { opacity: 0.8; transform: scale(1.05); }
     }
     .animate-fade-in-up {
-      animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     .animate-fade-in {
-      animation: fadeIn 0.5s ease-out forwards;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    .animate-pop-in {
+      animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     .animate-float {
       animation: floatSlow 4s ease-in-out infinite;
@@ -48,14 +63,23 @@ const AnimationStyles = () => (
     .animate-pulse-glow {
       animation: pulseGlow 3s ease-in-out infinite;
     }
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
+    /* Scrollbar halus untuk slider CCTV & Konten */
+    .cctv-scroll-container {
+      scroll-behavior: smooth;
     }
-    /* Hide scrollbar for IE, Edge and Firefox */
-    .no-scrollbar {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
+    .cctv-scroll-container::-webkit-scrollbar {
+      height: 6px;
+    }
+    .cctv-scroll-container::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 10px;
+    }
+    .cctv-scroll-container::-webkit-scrollbar-thumb {
+      background: #059669;
+      border-radius: 10px;
+    }
+    .cctv-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #10b981;
     }
   `}</style>
 );
@@ -115,6 +139,8 @@ interface LocationPin {
   sektor: string;
   lat: number;
   lng: number;
+  statusSensor?: string;
+  pinPos: { top: string; left: string };
 }
 
 interface CCTVPoint {
@@ -125,6 +151,7 @@ interface CCTVPoint {
   streamUrl: string;
   deskripsi: string;
   fps: number;
+  pinPos: { top: string; left: string };
 }
 
 interface TempatWisata {
@@ -146,19 +173,19 @@ interface AparatDesa {
   telepon: string;
 }
 
-// --- ORNAMEN DEKORATIF VEKTOR DAUN ORGANIK ---
-const LeafVectorShape = ({ className = "w-12 h-12 text-emerald-400 opacity-20" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="currentColor">
-    <path d="M50 5 C20 20, 5 45, 10 75 C15 90, 35 98, 50 95 C65 98, 85 90, 90 75 C95 45, 80 20, 50 5 Z M50 95 L50 25 M35 45 L50 35 M65 60 L50 50 M35 75 L50 65" 
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-const OrganicBlobBg = () => (
-  <svg className="absolute -z-10 top-0 right-0 w-96 h-96 opacity-15 pointer-events-none text-emerald-600 animate-float" viewBox="0 0 200 200">
-    <path fill="currentColor" d="M38.1,-52.1C49.1,-43.3,57.7,-31.8,61.8,-18.8C65.8,-5.8,65.3,8.7,60.1,21.8C54.8,34.8,44.9,46.4,32.4,54.2C19.9,62,4.8,66,-10.8,66.8C-26.4,67.6,-42.5,65.2,-53.8,55.9C-65,46.6,-71.4,30.4,-72.1,14.3C-72.8,-1.8,-67.8,-17.8,-59.2,-31.2C-50.6,-44.6,-38.4,-55.4,-24.9,-60.1C-11.4,-64.8,3.4,-63.4,18.1,-59.6C32.8,-55.8,27.1,-60.9,38.1,-52.1Z" transform="translate(100 100)" />
-  </svg>
-);
+interface ZonaWilayah {
+  id: string;
+  nama: string;
+  kategori: 'Konservasi Utama' | 'Sumber Mata Air' | 'Pemukiman & Eko-UMKM';
+  luas: string;
+  tingkatResapan: string;
+  risikoErosi: 'Sangat Rendah' | 'Rendah' | 'Sedang';
+  jumlahPohon: string;
+  sensorUtama: string;
+  warnaTema: string;
+  overlayStyle: { top: string; left: string; width: string; height: string };
+  deskripsi: string;
+}
 
 // --- LOGO TEMA KONSERVASI ORGANIK ---
 const LogoKonservasi = () => (
@@ -176,7 +203,7 @@ const STATS_POPULASI_REAL = {
   totalPenduduk: 21969,
   kelahiranTahunIni: 120,
   kematianTahunIni: 35,
-  jumlahKK: 6420,
+  jumlahKK: 5.771,
   luasRTH: '142 Ha',
   pohonTertanam: 12450
 };
@@ -209,7 +236,6 @@ const INITIAL_APARAT: AparatDesa[] = [
   { id: 2, nama: 'Ulfah Sari, SE., Ak., M.M.', jabatan: 'Lurah Pasanggrahan', nip: '19820815 200604 1 002', telepon: '081398765432' }
 ];
 
-// --- DATA DESTINASI WISATA MANGLAYANG & WISATA AIR REAL ---
 const INITIAL_WISATA: TempatWisata[] = [
   {
     id: 1,
@@ -217,7 +243,7 @@ const INITIAL_WISATA: TempatWisata[] = [
     kategori: 'Wisata Air & Waterfall',
     lokasi: 'Kaki Gunung Manglayang, Sektor Pasanggrahan',
     hargaTiket: 'Rp 10.000 / Orang',
-    gambar: '/curug-cilengkrang-bandung.jpg',
+    gambar: '/curug-cilengkrang-bandung.jpg', // <-- Cukup tulis nama filenya aja diawali '/'
     deskripsi: 'Wisata air terjun ikonik Gunung Manglayang...',
     fiturUtama: [ 
       { label: '6 Air Terjun Alami', icon: <Waves className="w-3.5 h-3.5 text-teal-600" /> },
@@ -231,41 +257,41 @@ const INITIAL_WISATA: TempatWisata[] = [
     id: 2,
     nama: 'Wisata Alam & Camping Batu Kuda Manglayang',
     kategori: 'Hutan Pinus & Ekowisata',
-    lokasi: 'Lereng Timur Gunung Manglayang',
+    lokasi: 'Lereng Timur Pasanggrahan',
     hargaTiket: 'Rp 15.000 / Orang',
     gambar: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&auto=format&fit=crop',
-    deskripsi: 'Kawasan konservasi hutan pinus rindang dengan ikon batu megah menyerupai kuda. Tempat favorit warga Bandung untuk camping, hammock-an, dan menikmati udara segar bebas polusi.',
+    deskripsi: 'Kawasan konservasi hutan pinus rindang. Tempat favorit warga untuk camping, hammock-an, dan menikmati udara segar.',
     fiturUtama: [
       { label: 'Camping Ground Hutan Pinus', icon: <Trees className="w-3.5 h-3.5 text-emerald-600" /> },
       { label: 'Udara Pegunungan Segar', icon: <Wind className="w-3.5 h-3.5 text-teal-500" /> },
       { label: 'Sewa Hammock & Tenda', icon: <Sprout className="w-3.5 h-3.5 text-teal-600" /> },
-      { label: 'Situs Batu Kuda Bersejarah', icon: <Mountain className="w-3.5 h-3.5 text-slate-700" /> }
+      { label: 'Situs Bersejarah Batu Kuda', icon: <Mountain className="w-3.5 h-3.5 text-slate-700" /> }
     ]
   },
   {
-    id: 3,
-    nama: 'Wisata Alam Gunung Manglayang (1818 mdpl)',
-    kategori: 'Pegunungan & Camping Ground',
-    lokasi: 'Desa Pasanggrahan, Ujungberung, Bandung',
-    hargaTiket: 'Rp 15.000 / Orang',
-    gambar: '/gunung-manglayang.jpg',
-    deskripsi: 'Pemandangan indah pegunungan yang asri dengan udara sejuk dan area camping favorit warga Bandung.',
-    fiturUtama: [
+    id: 3, // Sesuaikan ID-nya
+  nama: 'Wisata Alam Gunung Manglayang',
+  kategori: 'Pegunungan & Camping Ground',
+  lokasi: 'Desa Pasanggrahan, Ujungberung, Bandung',
+  hargaTiket: 'Rp 15.000 / Orang',
+  gambar: '/gunung-manglayang.jpg', // <-- Tinggal panggil nama file yang ada di folder public
+  deskripsi: 'Pemandangan indah pegunungan yang asri dengan udara sejuk dan area camping favorit warga Bandung.',
+  fiturUtama: [
       { label: 'Hutan Hujan Tropis', icon: <Trees className="w-3.5 h-3.5 text-emerald-700" /> },
-      { label: 'Jalur Pendakian Asri', icon: <Mountain className="w-3.5 h-3.5 text-emerald-600" /> },
-      { label: 'Lanskap Kota Bandung', icon: <Globe className="w-3.5 h-3.5 text-blue-500" /> },
-      { label: 'Flora Endemik Pegunungan', icon: <Flower2 className="w-3.5 h-3.5 text-rose-500" /> }
+      { label: 'Jalur Edukasi Ekologi', icon: <Mountain className="w-3.5 h-3.5 text-emerald-600" /> },
+      { label: 'Panorama City View', icon: <Globe className="w-3.5 h-3.5 text-blue-500" /> },
+      { label: 'Flora Endemik', icon: <Flower2 className="w-3.5 h-3.5 text-rose-500" /> }
     ]
   },
   {
-    id: 4,
-    nama: 'Bukit Papanggungan Manglayang',
-    kategori: 'Perbukitan & Sunrise Point',
-    lokasi: 'Kawasan Pasanggrahan, Ujungberung, Bandung',
-    hargaTiket: 'Gratis / Parkir Saja',
-    gambar: '/Bukit-Papanggungan.jpg',
-    deskripsi: 'Spot foto dan sunrise terbaik dengan pemandangan lautan awan serta panorama pegunungan yang memanjakan mata.',
-    fiturUtama: [
+   id: 4, // Sesuaikan ID urutannya
+  nama: 'Bukit Papanggungan',
+  kategori: 'Perbukitan & Sunrise Point',
+  lokasi: 'Kawasan Pasanggrahan, Ujungberung, Bandung',
+  hargaTiket: 'Gratis / Parkir Saja',
+  gambar: '/Bukit-Papanggungan.jpg', // <-- Nama file dari folder public
+  deskripsi: 'Spot foto dan sunrise terbaik dengan pemandangan lautan awan serta panorama pegunungan yang memanjakan mata.',
+  fiturUtama: [
       { label: 'View Lautan Awan', icon: <Cloud className="w-3.5 h-3.5 text-sky-500" /> },
       { label: 'Spot Sunrise', icon: <Sun className="w-3.5 h-3.5 text-amber-500" /> },
       { label: 'Panorama 360°', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> }
@@ -277,22 +303,22 @@ const INITIAL_BERITA: BeritaKonservasi[] = [
   {
     id: 1,
     kategori: 'Reboisasi & Konservasi',
-    judul: 'Penanaman 5.000 Bibit Pohon di Kaki Gunung Manglayang',
+    judul: 'Penanaman 5.000 Bibit Pohon di Kaki Lereng Hutan',
     kutipan: 'Pemerintah Kelurahan Pasanggrahan bersama komunitas pegiat lingkungan menggelar aksi penanaman pohon masal.',
-    detail: 'Kegiatan penanaman pohon ini melibatkan lebih dari 300 warga lokal dan relawan lingkungan. Spesies pohon yang ditanam meliputi Mahoni, Suren, dan Kopi Arabika yang memiliki daya serap air tinggi.',
+    detail: 'Kegiatan penanaman pohon ini melibatkan lebih dari 300 warga lokal dan relawan lingkungan. Spesies pohon yang ditanam meliputi Mahoni, Suren, dan Kopi Arabika untuk memperkuat daya resap tanah.',
     tanggal: '05 Agustus 2026',
     penulis: 'Tim Konservasi Desa',
     gambar: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop'
   },
   {
     id: 2,
-    kategori: 'Pengelolaan Mata Air Manglayang ',
+    kategori: 'Pengelolaan Mata Air Manglayang',
     judul: 'Layanan Pasokan Air Bersih & Depot',
-    kutipan: 'Menuju Desa Zero Waste, warga mengolah sampah dapur menjadi pupuk organik cair dan pupuk kompos bernilai tinggi.',
+    kutipan: 'Sistem pengolahan air bersih berbasis konservasi alami untuk keberlanjutan air warga.',
     detail: 'Program pengelolaan air bersih berbasis sumber daya alam Gunung manglayang ini menyediakan pasokan air higienis untuk kebutuhan depot isi ulang dan warga. Air dialirkan dan diproses secara higienis melalui pipa bertekanan tinggi untuk menjaga mutu serta kesegarannya.',
     tanggal: '07 Agustus 2026',
-    penulis: 'Tim Distribusi Air Manglayang',
-    gambar: '/Pengolahan-air.jpg'
+    penulis: 'Tim Distribusi Air',
+    gambar: 'Pengolahan-air.jpg'
   }
 ];
 
@@ -304,10 +330,10 @@ const INITIAL_UMKM: EkoUmkmItem[] = [
     wa: '6281234567890',
     kategori: 'Hasil Hutan Non-Kayu', 
     harga: 'Rp 45.000 / 250gr', 
-    lokasi: 'Lereng Manglayang RW 02',
+    lokasi: 'Pasanggrahan RW 02',
     gambar: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500',
     deskripsi: 'Kopi dipanen dari sistem tumpangsari konservasi pohon hutan, membantu menjaga kerapatan pohon.',
-    detailLengkap: 'Kopi Arabika murni 100% dipetik dari tanaman kopi yang ditanam bersama vegetasi hutan lindung Gunung Manglayang.'
+    detailLengkap: 'Kopi Arabika murni 100% dipetik dari tanaman kopi tumpangsari vegetasi hutan Pasanggrahan. Diproses secara natural dengan rasa nikmat khas lereng Manglayang.'
   },
   { 
     id: 2, 
@@ -319,7 +345,7 @@ const INITIAL_UMKM: EkoUmkmItem[] = [
     lokasi: 'RT 01 / RW 01, Pasanggrahan',
     gambar: 'https://images.unsplash.com/photo-1463936575829-25148e1db1b8?w=500',
     deskripsi: 'Bibit siap tanam berumur 6 bulan dengan kualitas unggul, cocok untuk program adopsi pohon.',
-    detailLengkap: 'Bibit tanaman berukuran 40-60cm dalam polybag siap tanam. Bebas pestisida kimia dan dibudidayakan secara organik.'
+    detailLengkap: 'Bibit tanaman berukuran 40-60cm dalam polybag siap tanam. Bebas dari pupuk kimia sintetis.'
   },
   { 
     id: 3, 
@@ -331,7 +357,7 @@ const INITIAL_UMKM: EkoUmkmItem[] = [
     lokasi: 'Pusat Pengolahan Sampah RW 03',
     gambar: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=500',
     deskripsi: 'Pupuk organik murni hasil pengolahan limbah rumah tangga warga desa.',
-    detailLengkap: 'Dihasilkan dari fermentasi limbah organik dapur warga dan kotoran ternak dengan formula starter mikrobiologi.'
+    detailLengkap: 'Dihasilkan dari fermentasi limbah organik dapur warga dengan mikroorganisme teruji.'
   }
 ];
 
@@ -344,40 +370,46 @@ const LOKASI_PASANGGRAHAN: LocationPin[] = [
     deskripsi: 'Pusat pelayanan publik administrasi kelurahan & posko edukasi konservasi air.',
     sektor: 'Sektor 1: Pusat Layanan Publik',
     lat: -6.9032,
-    lng: 107.7121
+    lng: 107.7121,
+    statusSensor: 'Debit Resapan Normal (98%)',
+    pinPos: { top: '68%', left: '38%' }
   },
   {
     id: 2,
-    nama: 'Zona Konservasi Lereng Manglayang',
+    nama: 'Zona Konservasi Hutan Lereng',
     kategori: 'Wisata',
-    alamat: 'Kawasan Kaki Gunung Manglayang RW 05, Pasanggrahan',
+    alamat: 'Kawasan Kaki Lereng RW 05, Pasanggrahan',
     deskripsi: 'Area utama reboisasi masal, sabuk hijau pencegah erosi, dan jalur edutrip ekologi.',
     sektor: 'Sektor 2: Area Konservasi Hutan',
     lat: -6.8920,
-    lng: 107.7210
+    lng: 107.7210,
+    statusSensor: 'Kerapatan Vegetasi High (87%)',
+    pinPos: { top: '28%', left: '68%' }
   },
   {
     id: 3,
     nama: 'Sentra Pembibitan & Eko-UMKM RW 03',
     kategori: 'Kuliner',
     alamat: 'Jl. Cilengkrang 1, Pasanggrahan, Ujungberung',
-    deskripsi: 'Pusat budidaya bibit mahoni, suren, serta olahan Kopi Arabika Manglayang.',
+    deskripsi: 'Pusat budidaya bibit mahoni, suren, serta olahan Kopi Arabika.',
     sektor: 'Sektor 3: Pekarangan Warga & Eko-UMKM',
     lat: -6.9085,
-    lng: 107.7155
+    lng: 107.7155,
+    statusSensor: 'Produksi Kompos Aktif',
+    pinPos: { top: '52%', left: '48%' }
   }
 ];
 
-// --- 5 TITIK CCTV REAL LENGKAP DENGAN GAMBAR DISESUAIKAN POIN WEBSITE ---
 const INITIAL_CCTV: CCTVPoint[] = [
   { 
     id: 1, 
-    nama: 'CCTV 01 - Pos Pantau Gunung Manglayang', 
-    lokasi: 'Jalur Pendakian & Lereng Manglayang RW 05', 
+    nama: 'CCTV 01 - Pos Pantau Hutan Lereng', 
+    lokasi: 'Jalur Pendakian & Lereng RW 05', 
     status: 'ONLINE', 
     streamUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop',
-    deskripsi: 'Memantau tutupan vegetasi hutan hujan tropis Gunung Manglayang, kerapatan pohon reboisasi, dan aktivitas pendaki.',
-    fps: 30
+    deskripsi: 'Memantau tutupan vegetasi hutan hujan tropis, kerapatan pohon reboisasi, dan aktivitas lingkungan.',
+    fps: 30,
+    pinPos: { top: '25%', left: '72%' }
   },
   { 
     id: 2, 
@@ -385,8 +417,9 @@ const INITIAL_CCTV: CCTVPoint[] = [
     lokasi: 'Kawasan Wisata Air & Stream Curug Cilengkrang', 
     status: 'ONLINE', 
     streamUrl: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&auto=format&fit=crop',
-    deskripsi: 'Monitoring debit air terjun alami, kejernihan hulu sungai Manglayang, serta keselamatan pengunjung wisata air.',
-    fps: 60
+    deskripsi: 'Monitoring debit air terjun alami, kejernihan hulu sungai, serta keselamatan pengunjung.',
+    fps: 60,
+    pinPos: { top: '38%', left: '80%' }
   },
   { 
     id: 3, 
@@ -394,26 +427,71 @@ const INITIAL_CCTV: CCTVPoint[] = [
     lokasi: 'Jl. Pasanggrahan No. 24, Ujungberung', 
     status: 'ONLINE', 
     streamUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop',
-    deskripsi: 'Pemantauan area pelayanan publik kantor kelurahan, keamanan gerbang utama, dan arus lalu lintas warga.',
-    fps: 25
+    deskripsi: 'Pemantauan area pelayanan publik kantor kelurahan, keamanan gerbang utama, dan aktivitas warga.',
+    fps: 25,
+    pinPos: { top: '65%', left: '35%' }
   },
   { 
     id: 4, 
     nama: 'CCTV 04 - Sentra Eko-UMKM & Pembibitan', 
     lokasi: 'Kawasan Galeri UMKM & Kebun Bibit RW 03', 
     status: 'ONLINE', 
-    streamUrl: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&auto=format&fit=crop',
-    deskripsi: 'Pengawasan kebun pembibitan mahoni/suren, komposting mandiri, serta aktivitas transaksi produk Eko-UMKM.',
-    fps: 30
+    streamUrl: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=500',
+    deskripsi: 'Pengawasan kebun pembibitan mahoni/suren, komposting mandiri, serta transaksi Eko-UMKM.',
+    fps: 30,
+    pinPos: { top: '55%', left: '50%' }
   },
   { 
     id: 5, 
-    nama: 'CCTV 05 - Posko Sumber Pengolahan Sumber Mata Air', 
-    lokasi: 'Mata air manglayang, Bandung Timur', 
+    nama: 'CCTV 05 - Posko Pengolahan Sumber Mata Air', 
+    lokasi: 'Mata Air Pasanggrahan, Bandung Timur', 
     status: 'ONLINE', 
     streamUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop',
-    deskripsi: 'Monitoring kondisi debit resapan mata air pegunungan, kerapatan lubang biopori, dan kebersihan lingkungan sekitar.',
-    fps: 24
+    deskripsi: 'Monitoring kondisi debit resapan mata air pegunungan dan kebersihan lingkungan sekitar.',
+    fps: 24,
+    pinPos: { top: '42%', left: '60%' }
+  }
+];
+
+const ZONA_PASANGGRAHAN: ZonaWilayah[] = [
+  {
+    id: 'zona-1',
+    nama: 'Zona 1: Sabuk Hijau & Hutan Lindung Manglayang',
+    kategori: 'Konservasi Utama',
+    luas: '85 Hektar',
+    tingkatResapan: '95% Optimal',
+    risikoErosi: 'Sangat Rendah',
+    jumlahPohon: '8.400 Pohon',
+    sensorUtama: 'NDVI Vegetasi: 0.88 | Kelembaban: 82%',
+    warnaTema: 'border-emerald-500 bg-emerald-500/20 text-emerald-950 font-bold',
+    overlayStyle: { top: '15%', left: '55%', width: '38%', height: '35%' },
+    deskripsi: 'Kawasan sabuk hijau hutan hujan lereng. Tempat perlindungan flora endemik, reboisasi tanaman keras, dan pencegah bahaya banjir erosi.'
+  },
+  {
+    id: 'zona-2',
+    nama: 'Zona 2: Hulu Mata Air & Wisata Curug Cilengkrang',
+    kategori: 'Sumber Mata Air',
+    luas: '32 Hektar',
+    tingkatResapan: '98% Sangat Tinggi',
+    risikoErosi: 'Rendah',
+    jumlahPohon: '2.800 Pohon',
+    sensorUtama: 'Debit Air: 14.2 L/s | pH: 7.2 Jernih',
+    warnaTema: 'border-cyan-500 bg-cyan-500/25 text-cyan-950 font-bold',
+    overlayStyle: { top: '35%', left: '65%', width: '28%', height: '30%' },
+    deskripsi: 'Ekosistem hulu sungai pegunungan dengan 6 tingkatan air terjun alami. Menjadi penyuplai pasokan air bersih alami warga desa.'
+  },
+  {
+    id: 'zona-3',
+    nama: 'Zona 3: Pemukiman Warga & Sentra Eko-UMKM',
+    kategori: 'Pemukiman & Eko-UMKM',
+    luas: '25 Hektar',
+    tingkatResapan: '78% Stabil',
+    risikoErosi: 'Sangat Rendah',
+    jumlahPohon: '1.250 Pohon Tumpangsari',
+    sensorUtama: 'Pengolahan Kompos: Aktif | Kualitas Udara: 18°C',
+    warnaTema: 'border-amber-500 bg-amber-500/25 text-amber-950 font-bold',
+    overlayStyle: { top: '50%', left: '25%', width: '35%', height: '38%' },
+    deskripsi: 'Kawasan pemukiman hijau warga dan perkebunan tumpangsari. Tempat pengolahan Kopi Arabika, pembibitan, dan bank sampah.'
   }
 ];
 
@@ -421,36 +499,29 @@ export function PublicPortal() {
   const [currentView, setCurrentView] = useState<'PUBLIC' | 'ADMIN_LOGIN' | 'ADMIN_DASHBOARD'>('PUBLIC');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // State Scroll To Top
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const cctvContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowScrollTop(true);
-      } else {
-        setShowScrollTop(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollCctv = (direction: 'left' | 'right') => {
+    if (cctvContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -360 : 360;
+      cctvContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
   };
 
-  // Admin Login State
+  const [showZones, setShowZones] = useState<boolean>(true);
+  const [showSensors, setShowSensors] = useState<boolean>(true);
+  const [showPins, setShowPins] = useState<boolean>(true);
+  const [showCCTVOverlay, setShowCCTVOverlay] = useState<boolean>(true);
+  const [activeZone, setActiveZone] = useState<ZonaWilayah>(ZONA_PASANGGRAHAN[0]);
+
   const [adminUsername, setAdminUsername] = useState<string>('');
   const [adminPassword, setAdminPassword] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
 
-  // Admin Active Tab State
   const [adminActiveTab, setAdminActiveTab] = useState<
-    'dashboard' | 'demografi' | 'umkm' | 'pengaduan' | 'cctv' | 'berita' | 'aparat' | 'pengaturan'
+    'dashboard' | 'demografi' | 'umkm' | 'pengaduan' | 'cctv' | 'berita' | 'aparat'
   >('dashboard');
 
-  // DATA STATES
   const [listWarga, setListWarga] = useState<WargaData[]>(INITIAL_WARGA);
   const [listUmkm, setListUmkm] = useState<EkoUmkmItem[]>(INITIAL_UMKM);
   const [listBerita, setListBerita] = useState<BeritaKonservasi[]>(INITIAL_BERITA);
@@ -463,28 +534,24 @@ export function PublicPortal() {
     { id: 2, nama: 'Siti Rahma', hp: '08987654321', kategori: 'Kerusakan Mata Air', lokasi: 'RW 01 Pasanggrahan', isi: 'Debit air di penampungan utama menurun, perlu pemeriksaan sistem saluran resapan.', tanggal: '02 Agustus 2026', status: 'DIPROSES' }
   ]);
 
-  // Selected Item Modals
+  // Modals / Pop-ups State
   const [selectedUmkm, setSelectedUmkm] = useState<EkoUmkmItem | null>(null);
   const [selectedBerita, setSelectedBerita] = useState<BeritaKonservasi | null>(null);
   const [selectedWisata, setSelectedWisata] = useState<TempatWisata | null>(null);
   const [selectedCCTVModal, setSelectedCCTVModal] = useState<CCTVPoint | null>(null);
 
-  const [activeLocation, setActiveLocation] = useState<LocationPin>(LOKASI_PASANGGRAHAN[0]);
-
-  // Form Pengaduan Public State
+  const [activeLocation, setActiveLocation] = useState<LocationPin | null>(null);
   const [formData, setFormData] = useState({ nama: '', hp: '', kategori: 'Isu Lingkungan / Penebangan Illegal', lokasi: '', isi: '' });
 
-  // Modals Input States
   const [showAddWargaModal, setShowAddWargaModal] = useState(false);
   const [newWarga, setNewWarga] = useState({ nik: '', nama: '', rtRw: 'RT 01 / RW 01', usia: 25, statusBantuan: 'Non-Bantuan' as const });
 
   const [showAddUmkmModal, setShowAddUmkmModal] = useState(false);
-  const [newUmkm, setNewUmkm] = useState({ nama: '', pemilik: '', wa: '', kategori: 'Hasil Hutan Non-Kayu', harga: '', lokasi: '', deskripsi: '', detailLengkap: '', gambar: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500' });
+  const [newUmkm, setNewUmkm] = useState({ nama: '', pemilik: '', wa: '6281234567890', kategori: 'Hasil Hutan Non-Kayu', harga: '', lokasi: '', deskripsi: '', detailLengkap: '', gambar: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500' });
 
   const [showAddBeritaModal, setShowAddBeritaModal] = useState(false);
   const [newBerita, setNewBerita] = useState({ judul: '', kategori: 'Kegiatan Desa', kutipan: '', detail: '', penulis: 'Admin Desa', gambar: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop' });
 
-  // Handle Admin Login Action
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminUsername === 'admin' && adminPassword === 'pasanggrahan2026') {
@@ -495,7 +562,6 @@ export function PublicPortal() {
     }
   };
 
-  // Handle Pengaduan Submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.nama && formData.isi) {
@@ -515,7 +581,6 @@ export function PublicPortal() {
     }
   };
 
-  // Admin Actions
   const handleAddWarga = (e: React.FormEvent) => {
     e.preventDefault();
     const katUsia = newWarga.usia < 18 ? 'Anak' : newWarga.usia >= 60 ? 'Lansia' : 'Produktif';
@@ -538,7 +603,7 @@ export function PublicPortal() {
     const data: EkoUmkmItem = { id: Date.now(), ...newUmkm };
     setListUmkm([data, ...listUmkm]);
     setShowAddUmkmModal(false);
-    setNewUmkm({ nama: '', pemilik: '', wa: '', kategori: 'Hasil Hutan Non-Kayu', harga: '', lokasi: '', deskripsi: '', detailLengkap: '', gambar: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500' });
+    setNewUmkm({ nama: '', pemilik: '', wa: '6281234567890', kategori: 'Hasil Hutan Non-Kayu', harga: '', lokasi: '', deskripsi: '', detailLengkap: '', gambar: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500' });
   };
 
   const handleAddBerita = (e: React.FormEvent) => {
@@ -558,13 +623,12 @@ export function PublicPortal() {
   const handleDeleteBerita = (id: number) => setListBerita(listBerita.filter(b => b.id !== id));
 
   // =========================================================================
-  // VIEW 1: DEDICATED ADMIN LOGIN PAGE
+  // VIEW 1: ADMIN LOGIN PAGE
   // =========================================================================
   if (currentView === 'ADMIN_LOGIN') {
     return (
-      <div className="min-h-screen bg-emerald-950/5 flex flex-col justify-center items-center p-6 relative font-sans text-slate-800 overflow-hidden">
+      <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-6 relative font-sans text-slate-800 overflow-hidden">
         <AnimationStyles />
-        <OrganicBlobBg />
         <button 
           onClick={() => setCurrentView('PUBLIC')}
           className="absolute top-8 left-8 bg-white hover:bg-emerald-50 text-emerald-900 font-bold px-4 py-2.5 rounded-2xl border border-emerald-200 shadow-sm transition flex items-center gap-2 text-xs"
@@ -572,7 +636,7 @@ export function PublicPortal() {
           <ArrowLeft className="w-4 h-4" /> Kembali ke Portal Warga
         </button>
 
-        <div className="bg-white/90 backdrop-blur-xl rounded-[3rem] p-8 sm:p-10 max-w-md w-full shadow-2xl border border-emerald-200 space-y-6 relative overflow-hidden animate-fade-in-up">
+        <div className="bg-white/95 backdrop-blur-xl rounded-[3rem] p-8 sm:p-10 max-w-md w-full shadow-2xl border border-emerald-200 space-y-6 relative overflow-hidden animate-fade-in-up">
           <div className="text-center space-y-3 relative z-10">
             <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-700 text-white rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/30">
               <Lock className="w-8 h-8" />
@@ -692,7 +756,7 @@ export function PublicPortal() {
                     adminActiveTab === 'cctv' ? 'bg-emerald-100 text-emerald-900 font-extrabold' : 'hover:bg-slate-100'
                   }`}
                 >
-                  <Video className="w-4 h-4 text-emerald-700" /> CCTV Konservasi (5 Titik)
+                  <Video className="w-4 h-4 text-emerald-700" /> CCTV Konservasi
                 </button>
                 <button 
                   onClick={() => setAdminActiveTab('berita')} 
@@ -721,7 +785,6 @@ export function PublicPortal() {
           </aside>
 
           <main className="flex-1 p-6 lg:p-10 space-y-8 overflow-y-auto animate-fade-in">
-            {/* TAB DASHBOARD */}
             {adminActiveTab === 'dashboard' && (
               <div className="space-y-8">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -804,7 +867,6 @@ export function PublicPortal() {
               </div>
             )}
 
-            {/* TAB DEMOGRAFI */}
             {adminActiveTab === 'demografi' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
@@ -859,7 +921,6 @@ export function PublicPortal() {
               </div>
             )}
 
-            {/* TAB UMKM */}
             {adminActiveTab === 'umkm' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
@@ -893,7 +954,6 @@ export function PublicPortal() {
               </div>
             )}
 
-            {/* TAB PENGADUAN, CCTV, BERITA */}
             {adminActiveTab === 'pengaduan' && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-black text-slate-900">Laporan Isu Lingkungan Warga</h2>
@@ -967,120 +1027,63 @@ export function PublicPortal() {
             )}
           </main>
         </div>
-
-        {/* MODAL TAMBAH WARGA */}
-        {showAddWargaModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
-              <button onClick={() => setShowAddWargaModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full">
-                <X className="w-4 h-4" />
-              </button>
-              <h3 className="text-lg font-black text-slate-900">Tambah Data Demografi Warga</h3>
-              <form onSubmit={handleAddWarga} className="space-y-3">
-                <input type="text" placeholder="NIK (16 digit)" required value={newWarga.nik} onChange={(e) => setNewWarga({...newWarga, nik: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <input type="text" placeholder="Nama Lengkap" required value={newWarga.nama} onChange={(e) => setNewWarga({...newWarga, nama: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="text" placeholder="RT / RW" required value={newWarga.rtRw} onChange={(e) => setNewWarga({...newWarga, rtRw: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                  <input type="number" placeholder="Usia (Tahun)" required value={newWarga.usia} onChange={(e) => setNewWarga({...newWarga, usia: Number(e.target.value)})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                </div>
-                <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3 rounded-2xl text-xs">Simpan Data Warga</button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL TAMBAH UMKM */}
-        {showAddUmkmModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
-              <button onClick={() => setShowAddUmkmModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full">
-                <X className="w-4 h-4" />
-              </button>
-              <h3 className="text-lg font-black text-slate-900">Tambah Produk Eko-UMKM</h3>
-              <form onSubmit={handleAddUmkm} className="space-y-3">
-                <input type="text" placeholder="Nama Produk" required value={newUmkm.nama} onChange={(e) => setNewUmkm({...newUmkm, nama: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <input type="text" placeholder="Pemilik / Kelompok" required value={newUmkm.pemilik} onChange={(e) => setNewUmkm({...newUmkm, pemilik: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <input type="text" placeholder="Harga" required value={newUmkm.harga} onChange={(e) => setNewUmkm({...newUmkm, harga: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <textarea placeholder="Ringkasan Produk..." required value={newUmkm.deskripsi} onChange={(e) => setNewUmkm({...newUmkm, deskripsi: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3 rounded-2xl text-xs">Simpan Produk</button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL TAMBAH BERITA */}
-        {showAddBeritaModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
-              <button onClick={() => setShowAddBeritaModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full">
-                <X className="w-4 h-4" />
-              </button>
-              <h3 className="text-lg font-black text-slate-900">Tambah Mading / Berita</h3>
-              <form onSubmit={handleAddBerita} className="space-y-3">
-                <input type="text" placeholder="Judul" required value={newBerita.judul} onChange={(e) => setNewBerita({...newBerita, judul: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <input type="text" placeholder="Kategori" required value={newBerita.kategori} onChange={(e) => setNewBerita({...newBerita, kategori: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <textarea placeholder="Ringkasan Ringkas..." required value={newBerita.kutipan} onChange={(e) => setNewBerita({...newBerita, kutipan: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <textarea placeholder="Detail Lengkap..." required value={newBerita.detail} onChange={(e) => setNewBerita({...newBerita, detail: e.target.value})} className="w-full bg-slate-50 border rounded-2xl p-3 text-xs" />
-                <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3 rounded-2xl text-xs">Publikasikan</button>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
 
   // =========================================================================
-  // VIEW 3: PUBLIC LANDING PAGE (UI KONSERVASI & MAP REAL UJUNGBERUNG)
+  // VIEW 3: PUBLIC LANDING PAGE
   // =========================================================================
   return (
-    <div className="scroll-smooth min-h-screen bg-[#f8faf7] text-slate-800 font-sans flex flex-col justify-between selection:bg-emerald-500 selection:text-white relative overflow-x-clip">
+    <div className="scroll-smooth min-h-screen bg-[#fcfdfc] text-slate-800 font-sans flex flex-col justify-between selection:bg-emerald-500 selection:text-white relative overflow-x-clip">
       <AnimationStyles />
-      <OrganicBlobBg />
 
       <div>
-        {/* NAVBAR UTAMA DENGAN ELEMEN KONSERVASI & HIASAN ALAM */}
-        <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-emerald-100 px-4 sm:px-6 py-3.5 shadow-sm transition-all duration-300">
+        {/* NAVBAR UTAMA (Mading dan Aparat telah dihapus dari sini agar tidak menumpuk) */}
+        <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-emerald-100/60 px-4 sm:px-6 py-3.5 transition-all duration-300 shadow-sm">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-3">
               <LogoKonservasi />
               <div>
-                <h1 className="font-black text-base sm:text-lg leading-tight text-emerald-950 flex items-center gap-1.5">
-                  Desa Pasanggrahan <Leaf className="w-4 h-4 text-emerald-500 fill-emerald-500 inline shrink-0 animate-pulse" />
+                <h1 className="font-black text-base sm:text-lg leading-tight text-slate-900 flex items-center gap-1.5">
+                  Desa Pasanggrahan <Leaf className="w-4 h-4 text-emerald-600 fill-emerald-600 inline shrink-0" />
                 </h1>
-                <p className="text-[10px] text-emerald-700 font-bold tracking-wider uppercase flex items-center gap-1">
+                <p className="text-[10px] text-slate-500 font-bold tracking-wider uppercase flex items-center gap-1">
                   <Trees className="w-3 h-3 text-emerald-600 inline" /> Kec. Ujungberung, Kota Bandung
                 </p>
               </div>
             </div>
             
-            {/* Navigasi Desktop */}
-            <div className="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-700">
-              <a href="#hero" className="hover:text-emerald-600 transition flex items-center gap-1">
-                <Sun className="w-3.5 h-3.5 text-amber-500" /> Beranda
+            {/* Navigasi Desktop yang Ringkas (Tanpa Mading & Aparat) */}
+            <div className="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-600">
+              <a href="#hero" className="hover:text-emerald-700 transition flex items-center gap-1">
+                <Sun className="w-3.5 h-3.5 text-emerald-600" /> Beranda
               </a>
-              <a href="#wisata" className="hover:text-emerald-600 transition flex items-center gap-1 text-emerald-800">
-                <Waves className="w-3.5 h-3.5 text-teal-600" /> Wisata &amp; Curug
+              <a href="#profil-alam" className="hover:text-emerald-700 transition flex items-center gap-1">
+                <Mountain className="w-3.5 h-3.5 text-emerald-600" /> Profil
               </a>
-              <a href="#demografi-real" className="hover:text-emerald-600 transition flex items-center gap-1">
-                <Sprout className="w-3.5 h-3.5 text-emerald-600" /> Populasi
+              <a href="#wisata" className="hover:text-emerald-700 transition flex items-center gap-1">
+                <Waves className="w-3.5 h-3.5 text-emerald-600" /> Wisata & Curug
               </a>
-              <a href="#peta" className="hover:text-emerald-600 transition flex items-center gap-1">
+              <a href="#demografi-real" className="hover:text-emerald-700 transition flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-emerald-600" /> Populasi
+              </a>
+              <a href="#peta" className="hover:text-emerald-700 transition flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-emerald-600" /> Pemetaan Map
               </a>
-              <a href="#umkm" className="hover:text-emerald-600 transition flex items-center gap-1">
+              <a href="#umkm" className="hover:text-emerald-700 transition flex items-center gap-1">
                 <Flower2 className="w-3.5 h-3.5 text-emerald-600" /> Eko-UMKM
               </a>
-              <a href="#cctv" className="hover:text-emerald-600 transition flex items-center gap-1">
+              <a href="#cctv" className="hover:text-emerald-700 transition flex items-center gap-1">
                 <Camera className="w-3.5 h-3.5 text-emerald-600" /> CCTV LIVE
               </a>
-              <a href="#lapor" className="hover:text-emerald-600 transition flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Lapor
+              <a href="#lapornya" className="hover:text-emerald-700 transition flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Lapor
               </a>
               
               <button 
                 onClick={() => setCurrentView('ADMIN_LOGIN')}
-                className="bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-800 hover:to-teal-900 text-white px-4.5 py-2.5 rounded-2xl transition shadow-md hover:shadow-emerald-700/20 flex items-center gap-1.5 font-extrabold ml-2"
+                className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-2 rounded-xl transition shadow-sm flex items-center gap-1.5 font-extrabold ml-2 text-xs"
               >
                 <LayoutDashboard className="w-3.5 h-3.5" /> Portal Admin
               </button>
@@ -1089,115 +1092,225 @@ export function PublicPortal() {
             {/* Tombol Mobile */}
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2.5 rounded-2xl bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100 transition"
+              className="lg:hidden p-2.5 rounded-2xl bg-emerald-50 text-emerald-900 hover:bg-emerald-100 transition"
               aria-label="Toggle Menu Mobile"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
 
-          {/* Menu Dropdown Mobile */}
+          {/* Menu Dropdown Mobile (Ringkas) */}
           {isMobileMenuOpen && (
-            <div className="lg:hidden mt-3 pt-3 border-t border-emerald-100 flex flex-col space-y-3 px-2 pb-3 font-extrabold text-slate-700 text-sm bg-white/95 rounded-3xl p-4 shadow-xl animate-fade-in-up">
-              <a href="#hero" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2">
-                <Sun className="w-4 h-4 text-amber-500" /> Beranda
+            <div className="lg:hidden mt-3 pt-3 border-t border-emerald-100 flex flex-col space-y-2 px-2 pb-3 font-extrabold text-emerald-900 text-sm bg-white rounded-3xl p-4 shadow-xl animate-fade-in-up">
+              <a href="#hero" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
+                <Sun className="w-4 h-4 text-emerald-600" /> Beranda
               </a>
-              <a href="#wisata" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 hover:text-emerald-800 text-teal-800 flex items-center gap-2">
-                <Waves className="w-4 h-4 text-teal-600" /> Wisata Air &amp; Curug Manglayang
+              <a href="#profil-alam" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
+                <Mountain className="w-4 h-4 text-emerald-600" /> Profil Alam
               </a>
-              <a href="#demografi-real" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2">
-                <Sprout className="w-4 h-4 text-emerald-600" /> Populasi &amp; Demografi
+              <a href="#wisata" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
+                <Waves className="w-4 h-4 text-emerald-600" /> Wisata Alam
               </a>
-              <a href="#peta" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-emerald-600" /> Peta Real Pasanggrahan
+              <a href="#demografi-real" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
+                <Users className="w-4 h-4 text-emerald-600" /> Populasi Warga
               </a>
-              <a href="#umkm" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2">
-                <Flower2 className="w-4 h-4 text-emerald-600" /> Katalog Eko-UMKM
+              <a href="#peta" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-emerald-600" /> Pemetaan Map
               </a>
-              <a href="#cctv" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2">
-                <Camera className="w-4 h-4 text-emerald-600" /> CCTV Pantauan (5 Titik)
+              <a href="#umkm" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
+                <Flower2 className="w-4 h-4 text-emerald-600" /> Eko-UMKM
               </a>
-              <a href="#lapor" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" /> Lapor Isu Lingkungan
+              <a href="#cctv" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
+                <Camera className="w-4 h-4 text-emerald-600" /> CCTV LIVE
+              </a>
+              <a href="#lapornya" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-emerald-600" /> Lapor
               </a>
               <button 
                 onClick={() => { setIsMobileMenuOpen(false); setCurrentView('ADMIN_LOGIN'); }}
                 className="w-full text-center bg-emerald-800 text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow"
               >
-                <LayoutDashboard className="w-4 h-4" /> Masuk Portal Admin
+                <LayoutDashboard className="w-4 h-4" /> Portal Admin
               </button>
             </div>
           )}
         </nav>
 
-        {/* HERO SECTION DENGAN IKON & DEKORASI KONSERVASI ALAM LENGKAP */}
+        {/* 🌿 1. BAGIAN BERANDA 🌿 */}
         <section 
           id="hero" 
-          className="relative py-24 lg:py-36 px-6 overflow-hidden bg-cover bg-center text-slate-900 rounded-b-[3.5rem] shadow-2xl animate-fade-in"
-          style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(6, 78, 59, 0.88), rgba(4, 47, 38, 0.96)), url('https://images.unsplash.com/photo-1448375240586-882707db888b?w=1600&auto=format&fit=crop')`,
-          }}
+          className="relative py-16 lg:py-24 px-6 overflow-hidden bg-transparent text-slate-800 animate-fade-in max-w-7xl mx-auto"
         >
-          {/* Aksesoris Vektor Organik & Floating Icons Alam */}
-          <div className="absolute top-6 left-6 pointer-events-none">
-            <LeafVectorShape className="w-32 h-32 text-emerald-400/25 animate-float" />
-          </div>
-          <div className="absolute bottom-6 right-6 pointer-events-none rotate-180">
-            <LeafVectorShape className="w-40 h-40 text-teal-300/25 animate-float" />
-          </div>
+          <div className="absolute top-10 left-10 w-72 h-72 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-glow"></div>
+          <div className="absolute bottom-10 right-10 w-80 h-80 bg-teal-200/30 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-glow"></div>
 
-          <div className="absolute top-12 right-16 hidden lg:flex items-center gap-2 bg-emerald-900/60 backdrop-blur-md border border-emerald-400/30 px-3.5 py-1.5 rounded-full text-emerald-200 text-xs font-semibold animate-pulse-glow">
-            <Bird className="w-4 h-4 text-amber-300" /> Habitat Satwa Lindung
-          </div>
-          <div className="absolute bottom-16 left-16 hidden lg:flex items-center gap-2 bg-teal-900/60 backdrop-blur-md border border-teal-400/30 px-3.5 py-1.5 rounded-full text-teal-200 text-xs font-semibold animate-pulse-glow">
-            <Wind className="w-4 h-4 text-cyan-300" /> Udara Bersih Pegunungan
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-7 space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs font-extrabold shadow-sm animate-float">
+                <Sparkles className="w-4 h-4 text-emerald-600" /> Portal Resmi Kelurahan Pasanggrahan, Ujungberung
+              </div>
 
-          <div className="relative max-w-7xl mx-auto text-center space-y-6 z-10 animate-fade-in-up">
-            <div className="flex justify-center items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-xs font-bold backdrop-blur-md shadow-inner">
-                <Trees className="w-4 h-4 text-emerald-300" /> Kawasan Konservasi Gunung Manglayang
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-teal-500/25 border border-teal-400/40 text-teal-200 text-xs font-bold backdrop-blur-md">
-                <Droplets className="w-3.5 h-3.5 text-cyan-300" /> Resapan Air Ujungberung
-              </span>
+              <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 leading-[1.15]">
+                Harmoni Konservasi &amp; Ekosistem <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800">
+                  Kelurahan Pasanggrahan
+                </span>
+              </h1>
+
+              <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed">
+                Portal Terpadu Desa Pasanggrahan, Ujungberung. Menjelajahi keindahan alami Curug Cilengkrang, tutupan hutan Gunung Manglayang, pemberdayaan Eko-UMKM, serta pemantauan live CCTV.
+              </p>
+
+              <div className="flex flex-wrap gap-4 pt-2">
+                <a href="#peta" className="bg-emerald-700 hover:bg-emerald-800 text-white font-black px-7 py-3.5 rounded-2xl transition-all duration-300 text-xs uppercase tracking-wider shadow-lg shadow-emerald-700/20 flex items-center gap-2">
+                  <Compass className="w-4 h-4" /> Buka Peta &amp; Pantau
+                </a>
+                <a href="#wisata" className="bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold px-7 py-3.5 rounded-2xl transition-all duration-300 text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm">
+                  <Waves className="w-4 h-4 text-emerald-600" /> Jelajahi Wisata
+                </a>
+              </div>
             </div>
 
-            <h1 className="text-3xl sm:text-6xl font-black tracking-tight leading-tight text-white">
-              Harmoni Konservasi &amp; Ekosistem<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 flex items-center justify-center gap-3">
-                <Sprout className="w-8 h-8 sm:w-12 sm:h-12 text-emerald-400 inline" /> Kelurahan Pasanggrahan
-              </span>
-            </h1>
+            <div className="lg:col-span-5 relative animate-fade-in-up">
+              <div className="relative rounded-[3rem] overflow-hidden border-8 border-emerald-100 shadow-2xl group">
+                <img 
+                  src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop" 
+                  alt="Panorama Lereng Pegunungan Pasanggrahan" 
+                  className="w-full h-[420px] object-cover group-hover:scale-105 transition duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/70 via-transparent to-transparent"></div>
+                
+                <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-emerald-100 shadow-lg text-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                      <Mountain className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-900">Kaki Gunung Manglayang</h4>
+                      <p className="text-[11px] text-emerald-700 font-medium">Udara Segar &amp; Panorama Alam Asri</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-            <p className="text-emerald-100 text-xs sm:text-base font-medium max-w-2xl mx-auto leading-relaxed">
-              Portal Terpadu Desa Pasanggrahan, Ujungberung. Menjelajahi keindahan alami Curug Cilengkrang, tutupan hutan Gunung Manglayang, pemberdayaan Eko-UMKM, serta pemantauan live CCTV.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-4 pt-4">
-              <a href="#wisata" className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-black px-7 py-3.5 rounded-2xl transition-all duration-300 text-xs uppercase tracking-wider shadow-lg hover:shadow-emerald-400/20 flex items-center gap-2 transform hover:-translate-y-1">
-                <Waves className="w-4 h-4" /> Wisata &amp; Curug Manglayang
-              </a>
-              <a href="#cctv" className="bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold px-7 py-3.5 rounded-2xl transition-all duration-300 text-xs uppercase tracking-wider backdrop-blur-md flex items-center gap-2 transform hover:-translate-y-1">
-                <Camera className="w-4 h-4" /> Pantau CCTV Live 
-              </a>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-12 max-w-5xl mx-auto">
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 backdrop-blur-md p-5 rounded-3xl border border-emerald-200 shadow-sm text-center">
+              <p className="text-xs text-emerald-800 font-bold uppercase">Luas RTH</p>
+              <p className="text-xl font-black text-emerald-950 mt-1">142 Hektar</p>
+            </div>
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-50/50 backdrop-blur-md p-5 rounded-3xl border border-teal-200 shadow-sm text-center">
+              <p className="text-xs text-teal-800 font-bold uppercase">Kamera Live</p>
+              <p className="text-xl font-black text-teal-950 mt-1">5 Titik CCTV</p>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50/50 backdrop-blur-md p-5 rounded-3xl border border-emerald-200 shadow-sm text-center">
+              <p className="text-xs text-emerald-800 font-bold uppercase">Pohon Tertanam</p>
+              <p className="text-xl font-black text-emerald-950 mt-1">12.450+</p>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-teal-50/50 backdrop-blur-md p-5 rounded-3xl border border-green-200 shadow-sm text-center">
+              <p className="text-xs text-green-800 font-bold uppercase">Air Terjun</p>
+              <p className="text-xl font-black text-green-950 mt-1">6 Tingkatan</p>
             </div>
           </div>
         </section>
 
-        {/* SECTION DESTINASI WISATA REAL GUNUNG MANGLAYANG & WISATA AIR */}
-        <section id="wisata" className="py-20 px-6 max-w-7xl mx-auto space-y-12 animate-fade-in-up">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-emerald-100 pb-6">
+        {/* SECTION PROFIL ALAM */}
+        <section id="profil-alam" className="py-20 px-6 max-w-7xl mx-auto space-y-10 animate-fade-in-up">
+          <div className="bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/40 rounded-[3.5rem] border border-emerald-200 p-8 sm:p-12 shadow-sm relative overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+              
+              <div className="lg:col-span-7 space-y-5">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-900 text-xs font-extrabold border border-emerald-300">
+                  <Sparkles className="w-4 h-4 text-emerald-600" /> Profil Alam &amp; Nuansa Gunung Manglayang
+                </div>
+
+                <h2 className="text-2xl sm:text-4xl font-black text-slate-900 leading-tight">
+                  Ketenangan Alami &amp; Pesona Pegunungan Pasanggrahan
+                </h2>
+
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  Kelurahan Pasanggrahan terletak tepat di bawah naungan lereng <strong className="text-emerald-800">Gunung Manglayang</strong>. Kawasan ini memancarkan nuansa alam pegunungan yang sangat kental dengan hembusan angin sejuk, pepohonan pinus yang menjulang tinggi, serta gemericik aliran sungai pegunungan yang jernih.
+                </p>
+
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  Keberadaan ekosistem ini menjadikan Pasanggrahan sebagai salah satu benteng konservasi penting di Kota Bandung Timur, tempat di mana kelestarian hutan, fauna endemik, serta tradisi tumpangsari Eko-UMKM warga hidup berdampingan secara harmonis.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3">
+                  <div className="bg-white/90 p-4 rounded-2xl border border-emerald-200 flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <Wind className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">Udara Sejuk</h4>
+                      <p className="text-[10px] text-emerald-700 font-medium">Bebas polusi kota</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/90 p-4 rounded-2xl border border-teal-200 flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <Droplets className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">Mata Air Alami</h4>
+                      <p className="text-[10px] text-teal-700 font-medium">Sumber air melimpah</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/90 p-4 rounded-2xl border border-green-200 flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-green-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <Bird className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">Fauna &amp; Flora</h4>
+                      <p className="text-[10px] text-green-700 font-medium">Keanekaragaman hayati</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 relative">
+                <div className="relative rounded-[2.5rem] overflow-hidden border-4 border-emerald-100 shadow-xl group">
+                  <img 
+                    src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop" 
+                    alt="Nuansa Hutan Pinus Pegunungan Pasanggrahan" 
+                    className="w-full h-[360px] object-cover group-hover:scale-105 transition duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/70 via-transparent to-transparent"></div>
+
+                  <div className="absolute top-4 right-4 bg-emerald-600 text-white p-2.5 rounded-2xl shadow-lg animate-float">
+                    <Flower2 className="w-5 h-5" />
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-emerald-200 text-slate-800 space-y-1 shadow">
+                    <p className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
+                      <Trees className="w-4 h-4 text-emerald-600" /> Hutan Pinus &amp; Vegetasi Alami
+                    </p>
+                    <p className="text-[11px] text-slate-600">
+                      Keasrian lereng yang dijaga ketat oleh warga dan pemerintah Pasanggrahan.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION DESTINASI WISATA */}
+        <section id="wisata" className="py-16 px-6 max-w-7xl mx-auto space-y-12 animate-fade-in-up">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-emerald-200 pb-6">
             <div className="space-y-2">
-              <span className="text-xs font-extrabold text-teal-700 tracking-wider uppercase flex items-center gap-1.5">
-                <Waves className="w-4 h-4 text-teal-600" /> Ekosistem Air Terjun &amp; Gunung Manglayang
+              <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center gap-1.5">
+                <Waves className="w-4 h-4 text-emerald-600" /> Ekosistem Air Terjun &amp; Pegunungan
               </span>
               <h2 className="text-3xl font-black text-slate-900 flex items-center gap-2">
                 Tempat Wisata Alam &amp; Curug di Pasanggrahan <Flower2 className="w-6 h-6 text-emerald-600" />
               </h2>
             </div>
-            <p className="text-xs text-slate-500 font-medium max-w-md">
-              Gunung Manglayang kaya akan hulu air jernih dan **Wisata Air Curug Cilengkrang** (6 tingkatan air terjun alami) serta kawasan camping hutan pinus.
+            <p className="text-xs text-slate-600 font-medium max-w-md">
+              Kaya akan hulu air jernih dan <strong className="text-emerald-800">Wisata Air Curug Cilengkrang</strong> (6 tingkatan air terjun alami) serta kawasan camping hutan pinus.
             </p>
           </div>
 
@@ -1206,16 +1319,16 @@ export function PublicPortal() {
               <div 
                 key={w.id} 
                 onClick={() => setSelectedWisata(w)}
-                className="bg-white rounded-[2.8rem] border border-emerald-100 overflow-hidden hover:border-emerald-500 hover:shadow-2xl cursor-pointer transition-all duration-500 group flex flex-col justify-between"
+                className="bg-white rounded-[2.8rem] border border-emerald-200 overflow-hidden hover:border-emerald-500 hover:shadow-xl cursor-pointer transition-all duration-500 group flex flex-col justify-between"
               >
                 <div>
                   <div className="h-64 overflow-hidden relative">
                     <img src={w.gambar} alt={w.nama} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent"></div>
-                    <span className="absolute top-4 left-4 text-xs font-extrabold px-3.5 py-1 bg-emerald-600/90 backdrop-blur-md text-white rounded-full shadow-md flex items-center gap-1">
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-emerald-950/20 to-transparent"></div>
+                    <span className="absolute top-4 left-4 text-xs font-extrabold px-3.5 py-1 bg-emerald-700/90 backdrop-blur-md text-white rounded-full shadow-md flex items-center gap-1">
                       <Trees className="w-3.5 h-3.5 text-emerald-200" /> {w.kategori}
                     </span>
-                    <span className="absolute bottom-4 left-4 text-xs font-mono font-bold text-emerald-200 flex items-center gap-1 bg-slate-900/60 backdrop-blur-sm px-3 py-1 rounded-full">
+                    <span className="absolute bottom-4 left-4 text-xs font-mono font-bold text-emerald-200 flex items-center gap-1 bg-emerald-950/70 backdrop-blur-sm px-3 py-1 rounded-full border border-emerald-800">
                       <MapPin className="w-3.5 h-3.5 text-emerald-400" /> {w.lokasi}
                     </span>
                   </div>
@@ -1224,10 +1337,9 @@ export function PublicPortal() {
                     <h3 className="font-black text-xl text-slate-900 group-hover:text-emerald-700 transition">{w.nama}</h3>
                     <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">{w.deskripsi}</p>
                     
-                    {/* FITUR DENGAN IKON ALAM */}
                     <div className="flex flex-wrap gap-2 pt-2">
                       {w.fiturUtama.map((fitur, idx) => (
-                        <span key={idx} className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                        <span key={idx} className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-xl flex items-center gap-1.5">
                           {fitur.icon} {fitur.label}
                         </span>
                       ))}
@@ -1235,8 +1347,8 @@ export function PublicPortal() {
                   </div>
                 </div>
 
-                <div className="px-6 sm:px-8 pb-6 pt-3 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
-                  <span className="text-xs font-black text-emerald-800">Tiket: {w.hargaTiket}</span>
+                <div className="px-6 sm:px-8 pb-6 pt-3 border-t border-emerald-100 flex justify-between items-center bg-emerald-50/40">
+                  <span className="text-xs font-black text-slate-900">Tiket: {w.hargaTiket}</span>
                   <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                     Lihat Info Lengkap <ChevronRight className="w-4 h-4" />
                   </span>
@@ -1247,120 +1359,266 @@ export function PublicPortal() {
         </section>
 
         {/* SECTION POPULASI & INDIKATOR LINGKUNGAN */}
-        <section id="demografi-real" className="py-16 bg-white border-y border-emerald-100 relative">
+        <section id="demografi-real" className="py-16 bg-emerald-50/40 border-y border-emerald-200 relative">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center max-w-xl mx-auto mb-12 space-y-1">
               <span className="text-[11px] font-extrabold text-emerald-700 tracking-wider uppercase flex items-center justify-center gap-1">
                 <Leaf className="w-3.5 h-3.5 text-emerald-600" /> Data Sosiologis &amp; Ekologis
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center justify-center gap-2">
-                Demografi &amp; Luas Ruang Terbuka Hijau <Sun className="w-6 h-6 text-amber-500" />
+                Demografi &amp; Luas Ruang Terbuka Hijau <Sun className="w-6 h-6 text-emerald-600" />
               </h2>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              <div className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border border-emerald-200/80 p-6 rounded-[2.5rem] text-center space-y-2 shadow-sm hover:shadow-md transition">
+              <div className="bg-white border border-emerald-200 p-6 rounded-[2.5rem] text-center space-y-2 shadow-sm">
                 <div className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
                   <Users className="w-6 h-6" />
                 </div>
                 <p className="text-2xl sm:text-3xl font-black text-slate-900">{STATS_POPULASI_REAL.totalPenduduk.toLocaleString('id-ID')}</p>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Penduduk (Jiwa)</p>
+                <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">Total Penduduk (Jiwa)</p>
               </div>
 
-              <div className="bg-gradient-to-b from-teal-50 to-teal-100/40 border border-teal-200/80 p-6 rounded-[2.5rem] text-center space-y-2 shadow-sm hover:shadow-md transition">
+              <div className="bg-white border border-teal-200 p-6 rounded-[2.5rem] text-center space-y-2 shadow-sm">
                 <div className="w-12 h-12 bg-teal-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
                   <Home className="w-6 h-6" />
                 </div>
                 <p className="text-2xl sm:text-3xl font-black text-slate-900">{STATS_POPULASI_REAL.jumlahKK.toLocaleString('id-ID')}</p>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Kepala Keluarga (KK)</p>
+                <p className="text-[11px] font-bold text-teal-800 uppercase tracking-wider">Kepala Keluarga (KK)</p>
               </div>
 
-              <div className="bg-gradient-to-b from-emerald-50 to-emerald-100/40 border border-emerald-200/80 p-6 rounded-[2.5rem] text-center space-y-2 shadow-sm hover:shadow-md transition">
+              <div className="bg-white border border-emerald-200 p-6 rounded-[2.5rem] text-center space-y-2 shadow-sm">
                 <div className="w-12 h-12 bg-emerald-700 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
                   <Trees className="w-6 h-6" />
                 </div>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-900">{STATS_POPULASI_REAL.luasRTH}</p>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Ruang Terbuka Hijau</p>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900">{STATS_POPULASI_REAL.luasRTH}</p>
+                <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">Ruang Terbuka Hijau</p>
               </div>
 
-              <div className="bg-gradient-to-b from-blue-50 to-blue-100/40 border border-blue-200/80 p-6 rounded-[2.5rem] text-center space-y-2 shadow-sm hover:shadow-md transition">
-                <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
+              <div className="bg-white border border-green-200 p-6 rounded-[2.5rem] text-center space-y-2 shadow-sm">
+                <div className="w-12 h-12 bg-green-700 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
                   <Sprout className="w-6 h-6" />
                 </div>
                 <p className="text-2xl sm:text-3xl font-black text-slate-900">+{STATS_POPULASI_REAL.pohonTertanam.toLocaleString('id-ID')}</p>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pohon Tumpangsari</p>
+                <p className="text-[11px] font-bold text-green-800 uppercase tracking-wider">Pohon Tumpangsari</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* PEMETAAN REAL KELURAHAN PASANGGRAHAN, UJUNGBERUNG */}
-        <section id="peta" className="py-20 px-6 max-w-7xl mx-auto space-y-6">
+        {/* 🗺️ SECTION PETA: PETA TIDAK BISA DIGESER 🗺️ */}
+        <section id="peta" className="py-20 px-6 max-w-7xl mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center gap-1.5">
-                <Compass className="w-4 h-4 text-emerald-600" /> Peta Static &amp; Dynamic Kelurahan Pasanggrahan
+                <Compass className="w-4 h-4 text-emerald-600" /> Pemetaan Interaktif &amp; Telemetri Alam
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 flex items-center gap-2">
-                Pemetaan Wilayah &amp; Posko Konservasi Real <Mountain className="w-6 h-6 text-emerald-700" />
+                Peta Zona Wilayah &amp; Alat Pantauan Desa <Mountain className="w-6 h-6 text-emerald-700" />
               </h2>
             </div>
             
-            <span className="text-xs bg-emerald-100 text-emerald-900 border border-emerald-300 font-extrabold px-4 py-2 rounded-2xl flex items-center gap-1.5 self-start">
-              <Globe className="w-4 h-4 text-emerald-700" /> Koordinat: 6°54'11"S 107°42'43"E
+            <span className="text-xs bg-emerald-50 text-emerald-900 border border-emerald-200 font-extrabold px-4 py-2 rounded-2xl flex items-center gap-1.5 self-start shadow-sm">
+              <Globe className="w-4 h-4 text-emerald-700" /> Sektor Pasanggrahan: 6°54'11"S 107°42'43"E
             </span>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-950 p-6 sm:p-8 rounded-[3.5rem] border border-emerald-800 shadow-2xl space-y-6 text-white relative overflow-hidden">
-            <div className="relative rounded-[2.5rem] overflow-hidden border border-emerald-700/60 bg-slate-900 h-[420px] w-full shadow-inner">
-              <iframe
-                title="Peta Real Kelurahan Pasanggrahan Ujungberung Bandung"
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                scrolling="no"
-                marginHeight={0}
-                marginWidth={0}
-                src="https://www.openstreetmap.org/export/embed.html?bbox=107.7000%2C-6.9150%2C107.7300%2C-6.8850&amp;layer=mapnik&amp;marker=-6.9032%2C107.7121"
-                className="w-full h-full grayscale-[20%] contrast-[110%] brightness-[95%]"
-              ></iframe>
+          <div className="bg-white p-6 sm:p-8 rounded-[3.5rem] border border-emerald-200 shadow-xl space-y-6 text-slate-800 relative overflow-hidden">
+            <div className="bg-emerald-50/50 p-4 rounded-[2rem] border border-emerald-200 flex flex-wrap items-center justify-between gap-4 z-25 relative">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-emerald-700" />
+                <span className="text-xs font-black text-slate-900">Sakelar Modul Layers:</span>
+              </div>
 
-              <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:max-w-md bg-slate-900/90 backdrop-blur-xl p-5 rounded-[2rem] border border-emerald-500/40 shadow-2xl space-y-2 z-20">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase px-3 py-1 rounded-full bg-emerald-500 text-emerald-950 inline-block">
-                    {activeLocation.sektor}
-                  </span>
-                  <span className="text-[10px] text-emerald-300 font-mono font-bold">
-                    {activeLocation.lat}, {activeLocation.lng}
-                  </span>
-                </div>
-                <h4 className="font-black text-base text-white flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0" /> {activeLocation.nama}
-                </h4>
-                <p className="text-xs text-emerald-100/90 leading-relaxed">{activeLocation.deskripsi}</p>
-                <p className="text-[11px] text-slate-400 pt-1.5 border-t border-emerald-800/80">📍 {activeLocation.alamat}</p>
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <button 
+                  onClick={() => setShowZones(!showZones)}
+                  className={`px-3.5 py-2 rounded-xl font-extrabold transition border flex items-center gap-1.5 ${
+                    showZones ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" /> Zona Wilayah: {showZones ? 'NYALA' : 'HILANG'}
+                </button>
+
+                <button 
+                  onClick={() => setShowSensors(!showSensors)}
+                  className={`px-3.5 py-2 rounded-xl font-extrabold transition border flex items-center gap-1.5 ${
+                    showSensors ? 'bg-teal-600 text-white border-teal-500 shadow-sm' : 'bg-white text-teal-800 border-teal-200 hover:bg-teal-50'
+                  }`}
+                >
+                  <Gauge className="w-3.5 h-3.5" /> Sensor Alam: {showSensors ? 'NYALA' : 'HILANG'}
+                </button>
+
+                <button 
+                  onClick={() => setShowPins(!showPins)}
+                  className={`px-3.5 py-2 rounded-xl font-extrabold transition border flex items-center gap-1.5 ${
+                    showPins ? 'bg-green-600 text-white border-green-500 shadow-sm' : 'bg-white text-green-800 border-green-200 hover:bg-green-50'
+                  }`}
+                >
+                  <MapPin className="w-3.5 h-3.5" /> Pin Posko: {showPins ? 'NYALA' : 'HILANG'}
+                </button>
+
+                <button 
+                  onClick={() => setShowCCTVOverlay(!showCCTVOverlay)}
+                  className={`px-3.5 py-2 rounded-xl font-extrabold transition border flex items-center gap-1.5 ${
+                    showCCTVOverlay ? 'bg-emerald-700 text-white border-emerald-600 shadow-sm' : 'bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50'
+                  }`}
+                >
+                  <Camera className="w-3.5 h-3.5" /> Kamera CCTV: {showCCTVOverlay ? 'NYALA' : 'HILANG'}
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {LOKASI_PASANGGRAHAN.map((loc) => (
-                <button
-                  key={loc.id}
-                  onClick={() => setActiveLocation(loc)}
-                  className={`p-4 rounded-2xl border text-left transition-all duration-300 flex items-start gap-3 ${
-                    activeLocation.id === loc.id 
-                      ? 'bg-emerald-800/90 border-emerald-400 text-white shadow-lg ring-2 ring-emerald-400/50' 
-                      : 'bg-emerald-950/50 border-emerald-800/60 text-emerald-200 hover:bg-emerald-900/60'
-                  }`}
-                >
-                  <MapPin className={`w-5 h-5 shrink-0 mt-0.5 ${activeLocation.id === loc.id ? 'text-emerald-300' : 'text-emerald-500'}`} />
-                  <div>
-                    <h5 className="font-extrabold text-xs">{loc.nama}</h5>
-                    <p className="text-[10px] opacity-80 mt-0.5 line-clamp-1">{loc.sektor}</p>
+            <div className="relative rounded-[2.5rem] overflow-hidden border border-emerald-200 bg-emerald-950 h-[520px] w-full shadow-inner select-none">
+              <div className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-emerald-200 text-[10px] font-mono text-emerald-900 flex items-center gap-1.5 shadow">
+                <Lock className="w-3 h-3 text-emerald-600" /> PETA STATIS TERTANAM
+              </div>
+
+              {showZones && ZONA_PASANGGRAHAN.map((zona) => {
+                const isSelected = activeZone?.id === zona.id;
+                return (
+                  <div
+                    key={zona.id}
+                    onClick={() => setActiveZone(zona)}
+                    style={{
+                      top: zona.overlayStyle.top,
+                      left: zona.overlayStyle.left,
+                      width: zona.overlayStyle.width,
+                      height: zona.overlayStyle.height,
+                    }}
+                    className={`absolute z-20 rounded-3xl border-2 cursor-pointer transition-all duration-300 p-3 backdrop-blur-[2px] flex flex-col justify-between shadow-lg ${zona.warnaTema} ${
+                      isSelected ? 'ring-4 ring-emerald-400 scale-105 z-30 shadow-2xl' : 'hover:scale-100 opacity-90'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-200 shadow">
+                        {zona.kategori}
+                      </span>
+                      {isSelected && <Sparkles className="w-4 h-4 text-emerald-300 animate-spin" />}
+                    </div>
+                    <div>
+                      <p className="text-xs font-black drop-shadow-sm text-slate-900">{zona.nama}</p>
+                      <p className="text-[10px] font-mono text-slate-800">{zona.luas} • {zona.tingkatResapan}</p>
+                    </div>
                   </div>
+                );
+              })}
+
+              {showPins && LOKASI_PASANGGRAHAN.map((loc) => {
+                const isActive = activeLocation?.id === loc.id;
+                return (
+                  <button
+                    key={loc.id}
+                    onClick={() => setActiveLocation(loc)}
+                    style={{ top: loc.pinPos.top, left: loc.pinPos.left }}
+                    className="absolute z-30 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 group flex flex-col items-center cursor-pointer"
+                  >
+                    <div className={`relative flex items-center justify-center p-2.5 rounded-full shadow-2xl border-2 transition-transform duration-300 ${
+                      isActive ? 'bg-emerald-500 border-white scale-125 ring-4 ring-emerald-400/40' : 'bg-emerald-700 border-white hover:scale-110'
+                    }`}>
+                      <MapPin className={`w-5 h-5 ${isActive ? 'text-white' : 'text-white'}`} />
+                    </div>
+                    <span className={`mt-1 text-[9px] font-black px-2 py-0.5 rounded-lg shadow-md backdrop-blur-md whitespace-nowrap border ${
+                      isActive ? 'bg-emerald-600 text-white border-white' : 'bg-white/95 text-emerald-900 border-emerald-200'
+                    }`}>
+                      {loc.nama}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {showCCTVOverlay && listCctv.map((cam) => (
+                <button
+                  key={cam.id}
+                  onClick={() => setSelectedCCTVModal(cam)}
+                  style={{ top: cam.pinPos.top, left: cam.pinPos.left }}
+                  className="absolute z-30 transform -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center cursor-pointer"
+                  title={`Buka Stream: ${cam.nama}`}
+                >
+                  <div className="w-7 h-7 rounded-full bg-teal-600 border-2 border-white flex items-center justify-center text-white shadow-lg hover:scale-125 transition">
+                    <Camera className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-[8px] font-bold bg-white text-teal-800 px-1.5 py-0.5 rounded mt-0.5 border border-teal-200 shadow-sm">
+                    CCTV 0{cam.id}
+                  </span>
                 </button>
               ))}
+
+              <iframe
+                title="Peta Kelurahan Pasanggrahan Ujungberung Bandung"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=107.6950%2C-6.9200%2C107.7350%2C-6.8800&amp;layer=mapnik&amp;marker=-6.9032%2C107.7121"
+                className="absolute inset-0 w-full h-full border-0 grayscale-[15%] contrast-[105%] brightness-[95%] pointer-events-none"
+              ></iframe>
+
+              {showZones && activeZone && (
+                <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:max-w-md bg-white/95 backdrop-blur-xl p-5 rounded-[2rem] border border-emerald-200 shadow-2xl space-y-2 z-30 animate-fade-in-up">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase px-3 py-0.5 rounded-full bg-emerald-600 text-white">
+                      {activeZone.kategori}
+                    </span>
+                  </div>
+                  <h4 className="font-black text-base text-slate-900 flex items-center gap-2">
+                    <Trees className="w-4 h-4 text-emerald-600 shrink-0" /> {activeZone.nama}
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">{activeZone.deskripsi}</p>
+                </div>
+              )}
             </div>
+
+            {showSensors && (
+              <div className="space-y-4 pt-4 border-t border-emerald-100 animate-fade-in-up">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Radio className="w-4 h-4 text-emerald-600 animate-pulse" /> Alat Pantauan Telemetri Real-Time Desa
+                  </h3>
+                  <span className="text-[10px] font-mono text-emerald-700 flex items-center gap-1 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                    <RefreshCw className="w-3 h-3 animate-spin" /> Update Otomatis Tiap 5m
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-200 space-y-2 relative overflow-hidden shadow-sm">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-extrabold text-emerald-900 flex items-center gap-1">
+                        <Waves className="w-4 h-4 text-emerald-600" /> Sensor Debit Curug
+                      </span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    </div>
+                    <p className="text-2xl font-black text-slate-900">14.2 <span className="text-xs font-normal text-slate-500">Liter / Detik</span></p>
+                  </div>
+
+                  <div className="bg-teal-50/40 p-4 rounded-2xl border border-teal-200 space-y-2 relative overflow-hidden shadow-sm">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-extrabold text-teal-900 flex items-center gap-1">
+                        <Droplets className="w-4 h-4 text-teal-600" /> Moisture Lereng
+                      </span>
+                      <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping"></span>
+                    </div>
+                    <p className="text-2xl font-black text-slate-900">76% <span className="text-xs font-normal text-slate-500">Kelembaban</span></p>
+                  </div>
+
+                  <div className="bg-green-50/40 p-4 rounded-2xl border border-green-200 space-y-2 relative overflow-hidden shadow-sm">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-extrabold text-green-900 flex items-center gap-1">
+                        <Trees className="w-4 h-4 text-green-600" /> Indeks Vegetasi
+                      </span>
+                      <span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
+                    </div>
+                    <p className="text-2xl font-black text-slate-900">0.84 <span className="text-xs font-normal text-slate-500">NDVI</span></p>
+                  </div>
+
+                  <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-300 space-y-2 relative overflow-hidden shadow-sm">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-extrabold text-emerald-900 flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4 text-emerald-700" /> Status EWS
+                      </span>
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <p className="text-2xl font-black text-emerald-700">AMAN</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -1380,25 +1638,25 @@ export function PublicPortal() {
               <div 
                 key={item.id} 
                 onClick={() => setSelectedUmkm(item)}
-                className="bg-white rounded-[2.5rem] border border-emerald-100 overflow-hidden hover:border-emerald-500 cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-xl flex flex-col justify-between"
+                className="bg-white rounded-[2.5rem] border border-emerald-200 overflow-hidden hover:border-emerald-500 cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-xl flex flex-col justify-between"
               >
                 <div>
                   <div className="h-52 overflow-hidden relative">
                     <img src={item.gambar} alt={item.nama} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <span className="absolute top-4 left-4 text-xs font-extrabold px-3 py-1 bg-white/90 backdrop-blur-md text-emerald-950 rounded-full border border-emerald-200 shadow-sm flex items-center gap-1">
+                    <span className="absolute top-4 left-4 text-xs font-extrabold px-3 py-1 bg-white/95 backdrop-blur-md text-emerald-900 rounded-full border border-emerald-200 shadow-sm flex items-center gap-1">
                       <Sprout className="w-3.5 h-3.5 text-emerald-600" /> {item.kategori}
                     </span>
                   </div>
                   <div className="p-6 space-y-2">
                     <h3 className="font-black text-lg text-slate-900 group-hover:text-emerald-700 transition">{item.nama}</h3>
-                    <p className="text-slate-500 text-xs">Pengelola: {item.pemilik}</p>
+                    <p className="text-emerald-800 text-xs font-medium">Pengelola: {item.pemilik}</p>
                     <p className="text-slate-600 text-xs line-clamp-2">{item.deskripsi}</p>
                   </div>
                 </div>
 
-                <div className="px-6 pb-6 pt-2 border-t border-slate-100 flex justify-between items-center">
-                  <span className="text-base font-black text-emerald-700">{item.harga}</span>
-                  <span className="text-xs bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2 rounded-2xl transition flex items-center gap-1.5">
+                <div className="px-6 pb-6 pt-2 border-t border-emerald-100 flex justify-between items-center bg-emerald-50/30">
+                  <span className="text-base font-black text-slate-900">{item.harga}</span>
+                  <span className="text-xs bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2 rounded-2xl transition flex items-center gap-1.5 shadow-sm">
                     <Eye className="w-3.5 h-3.5" /> Detail Produk
                   </span>
                 </div>
@@ -1407,66 +1665,76 @@ export function PublicPortal() {
           </div>
         </section>
 
-        {/* MONITORING 5 CCTV (DENGAN NAMA & GAMBAR SESUAI POIN WEBSITE) */}
-        <section id="cctv" className="py-20 px-6 bg-slate-950 text-white border-t border-slate-800 rounded-t-[3.5rem] relative overflow-hidden">
+        {/* MONITORING 5 CCTV LIVE */}
+        <section id="cctv" className="py-20 px-6 bg-emerald-950 text-white border-t border-emerald-900 rounded-t-[3.5rem] relative overflow-hidden">
           <div className="max-w-7xl mx-auto space-y-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-emerald-400 tracking-wider uppercase flex items-center gap-1.5">
-                  <Camera className="w-4 h-4 text-emerald-400" /> Live Monitoring System
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <span className="text-xs font-extrabold text-emerald-300 tracking-wider uppercase flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-emerald-300 animate-pulse" /> Live Monitoring Pengawasan Hutan &amp; Wilayah
                 </span>
-                <h2 className="text-3xl font-black text-white flex items-center gap-2">
-                  5 Kamera CCTV Real-Time Pasanggrahan <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
+                <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">
+                  5 Titik Kamera CCTV Daring Pasanggrahan
                 </h2>
-                <p className="text-xs text-slate-400">
-                  Klik pada salah satu kartu CCTV untuk membuka Pop-Up Live Streaming interaktif.
-                </p>
               </div>
 
-              {/* HINT PETUNJUK GESER */}
-              <div className="flex items-center gap-2 text-xs text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800/80 px-4 py-2 rounded-2xl shrink-0 self-start md:self-auto shadow-md">
-                <ChevronRight className="w-4 h-4 animate-bounce" /> Geser ke kanan untuk lihat CCTV lainnya →
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => scrollCctv('left')}
+                  className="p-3 rounded-2xl bg-emerald-900 hover:bg-emerald-800 text-white border border-emerald-800 transition"
+                  aria-label="Geser Kiri"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => scrollCctv('right')}
+                  className="p-3 rounded-2xl bg-emerald-900 hover:bg-emerald-800 text-white border border-emerald-800 transition"
+                  aria-label="Geser Kanan"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            {/* HORIZONTAL SCROLL CONTAINER CCTV */}
-            <div className="flex overflow-x-auto gap-6 pb-6 pt-2 scrollbar-thin scrollbar-thumb-emerald-600 scrollbar-track-slate-900 snap-x snap-mandatory">
+            <div 
+              ref={cctvContainerRef}
+              className="flex gap-6 overflow-x-auto pb-4 pt-2 cctv-scroll-container snap-x"
+            >
               {listCctv.map((cam) => (
                 <div 
                   key={cam.id}
                   onClick={() => setSelectedCCTVModal(cam)}
-                  className="min-w-[290px] sm:min-w-[340px] md:min-w-[360px] snap-center shrink-0 bg-slate-900 rounded-[2.2rem] border border-slate-800 overflow-hidden p-4.5 hover:border-emerald-500 cursor-pointer transition-all duration-300 hover:scale-[1.02] group shadow-2xl space-y-3 flex flex-col justify-between relative"
+                  className="min-w-[320px] sm:min-w-[360px] bg-emerald-900/60 rounded-[2.5rem] border border-emerald-800 overflow-hidden hover:border-emerald-500 transition cursor-pointer group snap-start flex flex-col justify-between shadow-xl backdrop-blur-sm"
                 >
-                  {/* Badge Sektor Alam */}
-                  <div className="absolute top-2 right-2 z-10">
-                    <span className="bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 backdrop-blur-md">
-                      <Trees className="w-3 h-3 text-emerald-400" /> Sektor 0{cam.id}
-                    </span>
-                  </div>
+                  <div>
+                    <div className="relative h-48 overflow-hidden">
+                      <img src={cam.streamUrl} alt={cam.nama} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-transparent to-transparent"></div>
+                      
+                      <div className="absolute top-4 left-4 bg-emerald-600/90 text-white text-[10px] font-black px-3 py-1 rounded-full flex items-center gap-1.5 shadow">
+                        <span className="w-2 h-2 bg-white rounded-full animate-ping"></span> LIVE STREAMING
+                      </div>
 
-                  <div className="relative h-48 rounded-2xl overflow-hidden bg-black mt-4">
-                    <img src={cam.streamUrl} alt={cam.nama} className="w-full h-full object-cover group-hover:opacity-100 opacity-80 transition duration-300" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/40"></div>
-                    
-                    <span className="absolute top-3 left-3 bg-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow">
-                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span> LIVE STREAM
-                    </span>
-
-                    <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center text-white">
-                      <span className="text-[10px] font-mono text-emerald-300 bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded">
+                      <div className="absolute top-4 right-4 bg-emerald-950/80 backdrop-blur-md px-2.5 py-1 rounded-xl text-[10px] font-mono text-emerald-300 border border-emerald-700">
                         {cam.fps} FPS
-                      </span>
-                      <span className="text-[10px] font-bold bg-emerald-600 group-hover:bg-emerald-500 text-white px-2.5 py-1 rounded-xl flex items-center gap-1 shadow">
-                        <Maximize2 className="w-3 h-3" /> Buka CCTV
-                      </span>
+                      </div>
+                    </div>
+
+                    <div className="p-6 space-y-2">
+                      <h3 className="font-bold text-base text-white group-hover:text-emerald-300 transition">{cam.nama}</h3>
+                      <p className="text-xs text-emerald-200/80 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-400" /> {cam.lokasi}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-sm text-white group-hover:text-emerald-400 transition">{cam.nama}</h3>
-                    <p className="text-xs text-slate-400 flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-emerald-500 shrink-0" /> {cam.lokasi}
-                    </p>
+                  <div className="px-6 pb-6 pt-2 border-t border-emerald-800/80 flex justify-between items-center text-xs">
+                    <span className="text-emerald-300 font-extrabold flex items-center gap-1">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" /> Status: {cam.status}
+                    </span>
+                    <span className="text-white font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      Perbesar Layar <Maximize2 className="w-3.5 h-3.5 text-emerald-300" />
+                    </span>
                   </div>
                 </div>
               ))}
@@ -1474,50 +1742,46 @@ export function PublicPortal() {
           </div>
         </section>
 
-        {/* INFO MADING BERITA VISUAL */}
-        <section id="mading" className="py-20 px-6 max-w-7xl mx-auto border-t border-emerald-100">
-          <div className="mb-10 space-y-2">
-            <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center gap-1">
-              <FileText className="w-4 h-4 text-emerald-600" /> Warta Lingkungan Pasanggrahan
-            </span>
-            <h2 className="text-3xl font-black text-slate-900 flex items-center gap-2">
-              Mading Digital &amp; Berita Konservasi <Sprout className="w-6 h-6 text-emerald-600" />
-            </h2>
+        {/* 📰 SECTION MADING & BERITA DESA 📰 */}
+        <section id="mading" className="py-20 px-6 max-w-7xl mx-auto space-y-10 animate-fade-in-up">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-emerald-200 pb-6">
+            <div className="space-y-2">
+              <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-emerald-600" /> Informasi Terkini Desa
+              </span>
+              <h2 className="text-3xl font-black text-slate-900">
+                Mading Digital &amp; Berita Konservasi
+              </h2>
+            </div>
+            <p className="text-xs text-slate-600 font-medium max-w-md">
+              Kabar seputar program reboisasi, pengolahan air bersih, serta kegiatan warga Kelurahan Pasanggrahan.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {listBerita.map((item) => (
+            {listBerita.map((b) => (
               <div 
-                key={item.id} 
-                onClick={() => setSelectedBerita(item)}
-                className="bg-white rounded-[2.8rem] border border-emerald-100 overflow-hidden hover:border-emerald-500 cursor-pointer transition-all duration-300 shadow-md group flex flex-col justify-between"
+                key={b.id} 
+                onClick={() => setSelectedBerita(b)}
+                className="bg-white rounded-[2.5rem] border border-emerald-200 overflow-hidden hover:border-emerald-500 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-xl group flex flex-col justify-between"
               >
                 <div>
-                  <div className="h-64 overflow-hidden relative">
-                    <img src={item.gambar} alt={item.judul} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
-                    <span className="absolute top-4 left-4 text-xs font-bold px-3.5 py-1 bg-emerald-600 text-white rounded-full shadow flex items-center gap-1">
-                      <Leaf className="w-3.5 h-3.5 text-emerald-200" /> {item.kategori}
+                  <div className="h-56 overflow-hidden relative">
+                    <img src={b.gambar} alt={b.judul} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                    <span className="absolute top-4 left-4 text-xs font-extrabold px-3.5 py-1 bg-emerald-700 text-white rounded-full shadow-md">
+                      {b.kategori}
                     </span>
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <div className="flex items-center gap-3 text-[11px] font-semibold text-emerald-200">
-                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {item.tanggal}</span>
-                        <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {item.penulis}</span>
-                      </div>
-                    </div>
                   </div>
 
-                  <div className="p-6 space-y-3">
-                    <h3 className="font-bold text-xl text-slate-900 leading-snug group-hover:text-emerald-700 transition">{item.judul}</h3>
-                    <p className="text-slate-600 text-xs leading-relaxed line-clamp-3">{item.kutipan}</p>
+                  <div className="p-6 sm:p-8 space-y-3">
+                    <span className="text-[10px] font-mono text-slate-400">{b.tanggal} • Oleh {b.penulis}</span>
+                    <h3 className="font-black text-lg text-slate-900 group-hover:text-emerald-700 transition">{b.judul}</h3>
+                    <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">{b.kutipan}</p>
                   </div>
                 </div>
 
-                <div className="p-6 pt-0 border-t border-slate-100 flex items-center justify-between mt-2">
-                  <span className="text-xs font-extrabold text-slate-500 flex items-center gap-1">
-                    Informasi Resmi Kelurahan
-                  </span>
-                  <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <div className="px-6 sm:px-8 pb-6 pt-3 border-t border-emerald-100 flex justify-between items-center bg-emerald-50/30">
+                  <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
                     Baca Selengkapnya <ChevronRight className="w-4 h-4" />
                   </span>
                 </div>
@@ -1526,244 +1790,342 @@ export function PublicPortal() {
           </div>
         </section>
 
-        {/* APARAT PEMERINTAHAN DESA */}
-        <section id="aparat" className="py-20 px-6 max-w-7xl mx-auto space-y-10 border-t border-emerald-100">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-bold text-emerald-700 tracking-wider uppercase">Pimpinan Kelurahan</span>
-            <h2 className="text-3xl font-black text-slate-900">Aparat Pemerintahan Desa Pasanggrahan</h2>
-          </div>
+        {/* 🏛️ SECTION APARAT KELURAHAN 🏛️ */}
+        <section id="aparat" className="py-20 px-6 bg-emerald-50/50 border-y border-emerald-200">
+          <div className="max-w-7xl mx-auto space-y-10">
+            <div className="text-center max-w-xl mx-auto space-y-2">
+              <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center justify-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-emerald-600" /> Struktur Kepemimpinan
+              </span>
+              <h2 className="text-3xl font-black text-slate-900">
+                Aparat &amp; Pemerintahan Kelurahan
+              </h2>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {listAparat.map((aparat) => (
-              <div key={aparat.id} className="bg-white p-6 rounded-[2.5rem] border border-emerald-100 shadow-sm flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-700 to-teal-900 text-white flex items-center justify-center shrink-0 shadow-md">
-                  <User className="w-7 h-7 text-emerald-200" />
-                </div>
-                <div className="space-y-2 flex-1">
-                  <div>
-                    <h3 className="text-base font-black text-slate-900">{aparat.nama}</h3>
-                    <p className="text-xs font-bold text-emerald-700">{aparat.jabatan}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">NIP: {aparat.nip}</p>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                    <a href={`https://wa.me/${aparat.telepon}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-slate-700 hover:text-emerald-700 underline">
-                      {aparat.telepon}
-                    </a>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {listAparat.map((ap) => (
+                <div key={ap.id} className="bg-white p-8 rounded-[2.5rem] border border-emerald-200 shadow-sm space-y-4 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                      <User className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-lg text-slate-900">{ap.nama}</h3>
+                      <p className="text-xs font-bold text-emerald-700 mt-0.5">{ap.jabatan}</p>
+                    </div>
+                    <div className="space-y-1 pt-2 text-xs font-mono text-slate-600 border-t border-slate-100">
+                      <p>NIP: {ap.nip}</p>
+                      <p>Telp: {ap.telepon}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* FORM LAPOR ISU LINGKUNGAN */}
-        <section id="lapor" className="py-20 px-6 max-w-4xl mx-auto border-t border-emerald-100">
-          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center justify-center gap-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" /> Layanan Pengawasan Ekologi
-            </span>
-            <h2 className="text-3xl font-black text-slate-900 flex items-center justify-center gap-2">
-              Lapor Kejadian &amp; Isu Lingkungan <CloudRain className="w-6 h-6 text-teal-600" />
-            </h2>
-          </div>
+        {/* 📝 SECTION LAPORNYA / PENGADUAN 📝 */}
+        <section id="lapornya" className="py-20 px-6 max-w-5xl mx-auto">
+          <div className="bg-white p-8 sm:p-12 rounded-[3.5rem] border border-emerald-200 shadow-xl space-y-8 relative overflow-hidden">
+            <div className="absolute -right-10 -bottom-10 w-60 h-60 bg-emerald-100/50 rounded-full blur-2xl pointer-events-none"></div>
 
-          <div className="bg-white p-8 sm:p-10 rounded-[3rem] border border-emerald-200 shadow-xl relative overflow-hidden">
-            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="text-center max-w-lg mx-auto space-y-2">
+              <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center justify-center gap-1.5">
+                <FileText className="w-4 h-4 text-emerald-600" /> Layanan Pengaduan Warga
+              </span>
+              <h2 className="text-3xl font-black text-slate-900">
+                Lapor Isu Lingkungan &amp; Konservasi
+              </h2>
+              <p className="text-xs text-slate-600">
+                Sampaikan laporan seputar kebersihan mata air, kerusakan hutan, atau saran pembangunan wilayah Pasanggrahan.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nama Pelapor *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nama Lengkap</label>
                   <input 
                     type="text" 
                     required
-                    placeholder="Nama lengkap" 
+                    placeholder="Masukkan nama Anda" 
                     value={formData.nama}
-                    onChange={(e) => setFormData({...formData, nama: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-700"
+                    onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                    className="w-full bg-slate-50 border border-emerald-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nomor WhatsApp *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nomor WhatsApp / HP</label>
                   <input 
-                    type="tel" 
+                    type="text" 
                     required
-                    placeholder="08xxxxxxxxxx" 
+                    placeholder="Contoh: 08123456789" 
                     value={formData.hp}
-                    onChange={(e) => setFormData({...formData, hp: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-700"
+                    onChange={(e) => setFormData({ ...formData, hp: e.target.value })}
+                    className="w-full bg-slate-50 border border-emerald-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Kategori Laporan</label>
+                  <select 
+                    value={formData.kategori}
+                    onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+                    className="w-full bg-slate-50 border border-emerald-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600 font-semibold"
+                  >
+                    <option value="Isu Lingkungan / Penebangan Illegal">Isu Lingkungan / Penebangan Illegal</option>
+                    <option value="Kebersihan & Sampah Mata Air">Kebersihan &amp; Sampah Mata Air</option>
+                    <option value="Infrastruktur & Fasilitas Umum">Infrastruktur &amp; Fasilitas Umum</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Lokasi / RT-RW</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Contoh: Sempadan Sungai RW 02" 
+                    value={formData.lokasi}
+                    onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
+                    className="w-full bg-slate-50 border border-emerald-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Isi Laporan / Isu Lingkungan *</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Isi Laporan / Detail Aduan</label>
                 <textarea 
                   rows={4}
                   required
-                  placeholder="Tuliskan detail laporan, RW, atau lokasi spesifik di Pasanggrahan..."
+                  placeholder="Jelaskan laporan atau keluhan Anda secara rinci..." 
                   value={formData.isi}
-                  onChange={(e) => setFormData({...formData, isi: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-4 text-sm focus:outline-none focus:border-emerald-700"
+                  onChange={(e) => setFormData({ ...formData, isi: e.target.value })}
+                  className="w-full bg-slate-50 border border-emerald-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600 resize-none"
                 ></textarea>
               </div>
 
               <button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-800 hover:to-teal-900 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-700/20 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
+                className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-700/20 transition text-sm flex items-center justify-center gap-2"
               >
-                <Send className="w-4 h-4" /> Kirimkan Laporan Lingkungan
+                <Send className="w-4 h-4" /> Kirim Laporan Pengaduan Warga
               </button>
             </form>
           </div>
         </section>
+
       </div>
 
-      {/* FOOTER DESA KONSERVASI */}
-      <footer className="bg-emerald-950 text-emerald-200 border-t border-emerald-900 pt-16 pb-12 px-6 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 text-xs relative z-10">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <LogoKonservasi />
-              <h3 className="text-base font-bold text-white flex items-center gap-1.5">
-                Kelurahan Pasanggrahan <Leaf className="w-3.5 h-3.5 text-emerald-400" />
-              </h3>
+      {/* ========================================================================= */}
+      {/* 🌿 BAGIAN FOOTER YANG TELAH DIPERBARUI & DIPERFESIONALKAN 🌿 */}
+      {/* ========================================================================= */}
+      <footer className="bg-emerald-950 text-emerald-100 pt-16 pb-12 px-6 border-t border-emerald-900 rounded-t-[3.5rem] mt-20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-900/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto space-y-12 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            
+            {/* Kolom 1: Profil & Identitas */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <LogoKonservasi />
+                <div>
+                  <h3 className="font-black text-lg text-white">Desa Pasanggrahan</h3>
+                  <p className="text-[10px] text-emerald-300 font-semibold uppercase tracking-wider">Kec. Ujungberung, Kota Bandung</p>
+                </div>
+              </div>
+              <p className="text-xs text-emerald-200/80 leading-relaxed">
+                Pusat informasi digital kelurahan yang berfokus pada pelestarian alam lereng Gunung Manglayang, transparansi demografi, Eko-UMKM, dan pemantauan lingkungan berbasis telemetri real-time.
+              </p>
+              <div className="pt-1 flex items-center gap-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span className="text-[11px] font-mono font-bold text-emerald-300">Sistem Online &amp; EWS Aman</span>
+              </div>
             </div>
-            <p className="text-xs leading-relaxed text-emerald-300">
-              Sistem Informasi Kelurahan Digital &amp; Pemetaan Geografis Kawasan Konservasi Pasanggrahan, Ujungberung, Kota Bandung.
-            </p>
+
+            {/* Kolom 2: Tautan Cepat */}
+            <div className="space-y-4">
+              <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
+                <Compass className="w-4 h-4 text-emerald-400" /> Navigasi Portal
+              </h4>
+              <ul className="space-y-2.5 text-xs font-semibold text-emerald-200/90">
+                <li><a href="#hero" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Beranda Utama</a></li>
+                <li><a href="#profil-alam" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Profil Alam Manglayang</a></li>
+                <li><a href="#wisata" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Wisata &amp; Curug Cilengkrang</a></li>
+                <li><a href="#demografi-real" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Data Populasi &amp; RTH</a></li>
+                <li><a href="#peta" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Peta &amp; Sensor Telemetri</a></li>
+              </ul>
+            </div>
+
+            {/* Kolom 3: Layanan & Produk */}
+            <div className="space-y-4">
+              <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
+                <Store className="w-4 h-4 text-emerald-400" /> Layanan &amp; Publik
+              </h4>
+              <ul className="space-y-2.5 text-xs font-semibold text-emerald-200/90">
+                <li><a href="#umkm" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Katalog Eko-UMKM Desa</a></li>
+                <li><a href="#cctv" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Live CCTV Pengawasan</a></li>
+                <li><a href="#mading" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Mading &amp; Berita Konservasi</a></li>
+                <li><a href="#aparat" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Aparat &amp; Pemerintahan</a></li>
+                <li><a href="#lapornya" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Lapor Isu Lingkungan</a></li>
+              </ul>
+            </div>
+
+            {/* Kolom 4: Kontak Resmi */}
+            <div className="space-y-4">
+              <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
+                <Phone className="w-4 h-4 text-emerald-400" /> Kontak &amp; Alamat
+              </h4>
+              <div className="space-y-3 text-xs text-emerald-200/90 font-medium">
+                <p className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Jl. Pasanggrahan No. 24, Kecamatan Ujungberung, Kota Bandung, Jawa Barat 40615</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>(022) 7801234 / 0812-2345-6789</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>kontak@pasanggrahan.bandung.go.id</span>
+                </p>
+              </div>
+            </div>
+
           </div>
 
-          <div className="space-y-3">
-            <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px] text-emerald-400 flex items-center gap-1">
-              <Trees className="w-3.5 h-3.5" /> Navigasi Portal
-            </h5>
-            <ul className="space-y-2 text-emerald-300">
-              <li><a href="#hero" className="hover:text-white transition">Beranda Utama</a></li>
-              <li><a href="#wisata" className="hover:text-white transition">Wisata &amp; Curug Manglayang</a></li>
-              <li><a href="#demografi-real" className="hover:text-white transition">Demografi Warga</a></li>
-              <li><a href="#peta" className="hover:text-white transition">Peta Kelurahan Pasanggrahan</a></li>
-              <li><a href="#cctv" className="hover:text-white transition">5 Kamera CCTV Live</a></li>
-            </ul>
-          </div>
-
-          <div className="space-y-3">
-            <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px] text-emerald-400 flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5" /> Alamat Kelurahan
-            </h5>
-            <p className="text-emerald-300 leading-relaxed">
-              Jl. Pasanggrahan No. 24, Kecamatan Ujungberung, Kota Bandung, Jawa Barat 40617
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px] text-emerald-400 flex items-center gap-1">
-              <Phone className="w-3.5 h-3.5" /> Kontak Layanan
-            </h5>
-            <p className="text-emerald-300 flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-emerald-400" /> (022) 780-1234</p>
-            <p className="text-emerald-300 flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-emerald-400" /> kelurahan@pasanggrahan.go.id</p>
+          <div className="pt-8 border-t border-emerald-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-emerald-300 font-medium">
+            <p>&copy; 2026 Kelurahan Pasanggrahan, Ujungberung. Seluruh Hak Cipta Dilindungi.</p>
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1 text-[11px]">
+                Dibuat dengan <Heart className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" /> untuk Konservasi Manglayang
+              </span>
+              <button 
+                onClick={() => setCurrentView('ADMIN_LOGIN')}
+                className="bg-emerald-900/80 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-xl border border-emerald-800 transition text-[11px]"
+              >
+                Login Admin
+              </button>
+            </div>
           </div>
         </div>
       </footer>
 
-      {/* TOMBOL FLOATING SCROLL TO TOP */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white p-3.5 rounded-full shadow-2xl border-2 border-emerald-300/50 transition-all duration-300 hover:scale-110 flex items-center justify-center group animate-fade-in"
-          title="Kembali ke Atas"
-          aria-label="Scroll ke atas"
-        >
-          <ArrowUp className="w-6 h-6 text-white group-hover:-translate-y-1 transition-transform" />
-        </button>
-      )}
+      {/* --- MODAL DETAIL UMKM --- */}
+      {selectedUmkm && (
+        <div className="fixed inset-0 z-50 bg-emerald-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] max-w-lg w-full p-6 sm:p-8 space-y-6 relative shadow-2xl border border-emerald-200 animate-pop-in text-slate-800">
+            <button 
+              onClick={() => setSelectedUmkm(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-emerald-50 text-emerald-900 hover:bg-emerald-100 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-      {/* POP-UP MODAL 5 TITIK CCTV */}
-      {selectedCCTVModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-[2.5rem] max-w-2xl w-full overflow-hidden shadow-2xl relative space-y-4 p-6 text-white animate-fade-in-up">
+            <img src={selectedUmkm.gambar} alt={selectedUmkm.nama} className="w-full h-56 object-cover rounded-2xl shadow-md" />
             
-            {/* Header CCTV Modal */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-                <div>
-                  <h3 className="font-black text-lg text-emerald-400">{selectedCCTVModal.nama}</h3>
-                  <p className="text-xs text-slate-400">{selectedCCTVModal.lokasi}</p>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">{selectedUmkm.kategori}</span>
+              <h3 className="text-xl font-black text-slate-900">{selectedUmkm.nama}</h3>
+              <p className="text-xs text-slate-500 font-medium">Pengelola: <strong className="text-slate-800">{selectedUmkm.pemilik}</strong> • {selectedUmkm.lokasi}</p>
+            </div>
 
-              <button 
-                onClick={() => setSelectedCCTVModal(null)} 
-                className="bg-red-600 hover:bg-red-700 text-white font-extrabold px-3.5 py-2 rounded-2xl flex items-center gap-1.5 text-xs transition shadow-lg"
+            <p className="text-xs text-slate-600 leading-relaxed bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">{selectedUmkm.detailLengkap}</p>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-lg font-black text-slate-900">{selectedUmkm.harga}</span>
+              <a 
+                href={`https://wa.me/${selectedUmkm.wa}?text=Halo%2C%20saya%20tertarik%20membeli%20produk%20${encodeURIComponent(selectedUmkm.nama)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-3 rounded-2xl text-xs flex items-center gap-2 shadow transition"
               >
-                <X className="w-4 h-4" /> Tutup CCTV
-              </button>
-            </div>
-
-            {/* Frame Live Stream CCTV */}
-            <div className="relative h-72 sm:h-96 rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-inner">
-              <img src={selectedCCTVModal.streamUrl} alt={selectedCCTVModal.nama} className="w-full h-full object-cover" />
-              
-              <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                <span className="text-[10px] font-mono font-bold text-white uppercase">LIVE BROADCAST</span>
-              </div>
-
-              <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 text-[10px] font-mono text-emerald-400">
-                REC • 1080p @ {selectedCCTVModal.fps}FPS
-              </div>
-
-              <div className="absolute bottom-4 left-4 right-4 bg-slate-950/80 backdrop-blur-md p-3 rounded-xl border border-slate-800 text-xs text-slate-300">
-                {selectedCCTVModal.deskripsi}
-              </div>
-            </div>
-
-            {/* Switcher CCTV */}
-            <div className="pt-2 border-t border-slate-800 space-y-2">
-              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Pilih Titik Kamera CCTV Lainnya:</p>
-              <div className="flex flex-wrap gap-2">
-                {listCctv.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedCCTVModal(c)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                      selectedCCTVModal.id === c.id 
-                        ? 'bg-emerald-600 text-white ring-2 ring-emerald-400' 
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    }`}
-                  >
-                    CCTV 0{c.id}
-                  </button>
-                ))}
-              </div>
+                <Phone className="w-4 h-4" /> Hubungi Penjual (WhatsApp)
+              </a>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL DETAILED WISATA */}
-      {selectedWisata && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-[2.5rem] max-w-lg w-full overflow-hidden shadow-2xl space-y-4 p-6 relative animate-fade-in-up">
-            <button onClick={() => setSelectedWisata(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full">
-              <X className="w-4 h-4 text-slate-600" />
+      {/* --- MODAL DETAIL BERITA / MADING --- */}
+      {selectedBerita && (
+        <div className="fixed inset-0 z-50 bg-emerald-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] max-w-2xl w-full p-6 sm:p-8 space-y-6 relative shadow-2xl border border-emerald-200 animate-pop-in text-slate-800 max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setSelectedBerita(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-emerald-50 text-emerald-900 hover:bg-emerald-100 transition"
+            >
+              <X className="w-5 h-5" />
             </button>
-            <img src={selectedWisata.gambar} alt={selectedWisata.nama} className="w-full h-56 rounded-2xl object-cover" />
+
+            <img src={selectedBerita.gambar} alt={selectedBerita.judul} className="w-full h-64 object-cover rounded-2xl shadow-md" />
             
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">{selectedWisata.kategori}</span>
-              <span className="text-xs font-semibold text-slate-500">📍 {selectedWisata.lokasi}</span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">{selectedBerita.kategori}</span>
+                <span className="text-[10px] text-slate-400 font-mono">{selectedBerita.tanggal} • Oleh {selectedBerita.penulis}</span>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900">{selectedBerita.judul}</h3>
             </div>
 
-            <div>
-              <h3 className="font-black text-xl text-slate-900">{selectedWisata.nama}</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">{selectedWisata.deskripsi}</p>
+            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100 whitespace-pre-line">{selectedBerita.detail}</p>
+
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={() => setSelectedBerita(null)}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-6 py-2.5 rounded-2xl text-xs transition"
+              >
+                Tutup Mading
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL DETAIL WISATA --- */}
+      {selectedWisata && (
+        <div className="fixed inset-0 z-50 bg-emerald-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] max-w-xl w-full p-6 sm:p-8 space-y-6 relative shadow-2xl border border-emerald-200 animate-pop-in text-slate-800 max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setSelectedWisata(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-emerald-50 text-emerald-900 hover:bg-emerald-100 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <img src={selectedWisata.gambar} alt={selectedWisata.nama} className="w-full h-60 object-cover rounded-2xl shadow-md" />
+            
+            <div className="space-y-2">
+              <span className="text-[10px] font-extrabold bg-emerald-700 text-white px-3 py-1 rounded-full">{selectedWisata.kategori}</span>
+              <h3 className="text-2xl font-black text-slate-900 mt-1">{selectedWisata.nama}</h3>
+              <p className="text-xs text-emerald-800 font-mono font-bold flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5" /> {selectedWisata.lokasi}
+              </p>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-700">Tiket: {selectedWisata.hargaTiket}</span>
-              <button onClick={() => setSelectedWisata(null)} className="bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl">
+            <p className="text-xs text-slate-600 leading-relaxed bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100">{selectedWisata.deskripsi}</p>
+
+            <div className="space-y-2">
+              <h4 className="text-xs font-black text-slate-900 uppercase">Fitur &amp; Keunggulan Wisata:</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {selectedWisata.fiturUtama.map((f, idx) => (
+                  <div key={idx} className="text-xs font-bold bg-white border border-emerald-200 p-2.5 rounded-xl flex items-center gap-2">
+                    {f.icon} {f.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <span className="text-xs font-black text-slate-900">Tiket Masuk: {selectedWisata.hargaTiket}</span>
+              <button 
+                onClick={() => setSelectedWisata(null)}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6 py-2.5 rounded-2xl text-xs transition shadow"
+              >
                 Tutup Info
               </button>
             </div>
@@ -1771,61 +2133,171 @@ export function PublicPortal() {
         </div>
       )}
 
-      {/* MODAL DETAILED UMKM */}
-      {selectedUmkm && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-[2.5rem] max-w-lg w-full overflow-hidden shadow-2xl space-y-4 p-6 relative animate-fade-in-up">
-            <button onClick={() => setSelectedUmkm(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full">
-              <X className="w-4 h-4 text-slate-600" />
+      {/* --- MODAL CCTV LIVE --- */}
+      {selectedCCTVModal && (
+        <div className="fixed inset-0 z-50 bg-emerald-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-emerald-900 rounded-[3rem] max-w-2xl w-full p-6 sm:p-8 space-y-6 relative shadow-2xl border border-emerald-700 animate-pop-in text-white">
+            <button 
+              onClick={() => setSelectedCCTVModal(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-emerald-800 text-white hover:bg-emerald-700 transition"
+            >
+              <X className="w-5 h-5" />
             </button>
-            <img src={selectedUmkm.gambar} alt={selectedUmkm.nama} className="w-full h-56 rounded-2xl object-cover" />
-            
-            <div>
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">{selectedUmkm.kategori}</span>
-              <h3 className="font-black text-xl text-slate-900 mt-2">{selectedUmkm.nama}</h3>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">Oleh: {selectedUmkm.pemilik} • {selectedUmkm.lokasi}</p>
-              <p className="text-xs text-slate-600 mt-3 leading-relaxed">{selectedUmkm.detailLengkap}</p>
+
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 bg-red-600 rounded-full animate-ping"></span>
+              <span className="text-xs font-black tracking-wider uppercase text-emerald-300">Live Streaming Kamera Konservasi</span>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
-              <span className="text-sm font-black text-emerald-700">{selectedUmkm.harga}</span>
-              <a 
-                href={`https://wa.me/${selectedUmkm.wa}?text=Halo%20saya%20tertarik%20dengan%20produk%20${encodeURIComponent(selectedUmkm.nama)}`} 
-                target="_blank" 
-                rel="noreferrer"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5"
+            <div className="relative h-64 sm:h-80 rounded-2xl overflow-hidden border border-emerald-700 shadow-inner">
+              <img src={selectedCCTVModal.streamUrl} alt={selectedCCTVModal.nama} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-transparent to-transparent"></div>
+              <div className="absolute bottom-4 left-4 right-4 bg-emerald-950/80 backdrop-blur-md p-3 rounded-xl border border-emerald-700 text-xs font-mono flex justify-between items-center">
+                <span>FPS: {selectedCCTVModal.fps}</span>
+                <span>STATUS: {selectedCCTVModal.status}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black">{selectedCCTVModal.nama}</h3>
+              <p className="text-xs text-emerald-200/90 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-emerald-400" /> {selectedCCTVModal.lokasi}
+              </p>
+              <p className="text-xs text-emerald-100 bg-emerald-950/60 p-3 rounded-xl border border-emerald-800">
+                {selectedCCTVModal.deskripsi}
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={() => setSelectedCCTVModal(null)}
+                className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-6 py-2.5 rounded-2xl text-xs transition shadow"
               >
-                <Phone className="w-3.5 h-3.5" /> Pesan via WA
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL DETAILED BERITA */}
-      {selectedBerita && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-[2.5rem] max-w-lg w-full overflow-hidden shadow-2xl space-y-4 p-6 relative animate-fade-in-up">
-            <button onClick={() => setSelectedBerita(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full">
-              <X className="w-4 h-4 text-slate-600" />
-            </button>
-            <img src={selectedBerita.gambar} alt={selectedBerita.judul} className="w-full h-56 rounded-2xl object-cover" />
-            
-            <div>
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">{selectedBerita.kategori}</span>
-              <h3 className="font-black text-xl text-slate-900 mt-2">{selectedBerita.judul}</h3>
-              <p className="text-[11px] text-slate-400 mt-1">{selectedBerita.tanggal} • Oleh {selectedBerita.penulis}</p>
-              <p className="text-xs text-slate-600 mt-3 leading-relaxed">{selectedBerita.detail}</p>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setSelectedBerita(null)} className="bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl">
-                Tutup Berita
+                Tutup Monitor
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* --- MODAL TAMBAH WARGA (ADMIN) --- */}
+      {showAddWargaModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border">
+            <h3 className="font-bold text-lg text-slate-900">Tambah Data Warga Baru</h3>
+            <form onSubmit={handleAddWarga} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold mb-1">NIK</label>
+                <input type="text" placeholder="327301..." value={newWarga.nik} onChange={(e) => setNewWarga({ ...newWarga, nik: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Nama Lengkap</label>
+                <input type="text" required placeholder="Nama warga" value={newWarga.nama} onChange={(e) => setNewWarga({ ...newWarga, nama: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">RT / RW</label>
+                <input type="text" placeholder="RT 01 / RW 01" value={newWarga.rtRw} onChange={(e) => setNewWarga({ ...newWarga, rtRw: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Usia</label>
+                <input type="number" required placeholder="25" value={newWarga.usia} onChange={(e) => setNewWarga({ ...newWarga, usia: Number(e.target.value) })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Status Bantuan</label>
+                <select value={newWarga.statusBantuan} onChange={(e) => setNewWarga({ ...newWarga, statusBantuan: e.target.value as any })} className="w-full border p-2.5 rounded-xl font-bold">
+                  <option value="Non-Bantuan">Non-Bantuan</option>
+                  <option value="Penerima PKH">Penerima PKH</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowAddWargaModal(false)} className="px-4 py-2 bg-slate-200 rounded-xl font-bold">Batal</button>
+                <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL TAMBAH UMKM (ADMIN) --- */}
+      {showAddUmkmModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-lg text-slate-900">Tambah Produk Eko-UMKM</h3>
+            <form onSubmit={handleAddUmkm} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold mb-1">Nama Produk</label>
+                <input type="text" required placeholder="Kopi Arabika..." value={newUmkm.nama} onChange={(e) => setNewUmkm({ ...newUmkm, nama: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Nama Pemilik / Kelompok</label>
+                <input type="text" required placeholder="Kelompok Tani..." value={newUmkm.pemilik} onChange={(e) => setNewUmkm({ ...newUmkm, pemilik: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">No WhatsApp</label>
+                <input type="text" required placeholder="6281234567890" value={newUmkm.wa} onChange={(e) => setNewUmkm({ ...newUmkm, wa: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Kategori</label>
+                <input type="text" placeholder="Hasil Hutan Non-Kayu" value={newUmkm.kategori} onChange={(e) => setNewUmkm({ ...newUmkm, kategori: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Harga</label>
+                <input type="text" required placeholder="Rp 45.000 / 250gr" value={newUmkm.harga} onChange={(e) => setNewUmkm({ ...newUmkm, harga: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Lokasi</label>
+                <input type="text" placeholder="Pasanggrahan RW 02" value={newUmkm.lokasi} onChange={(e) => setNewUmkm({ ...newUmkm, lokasi: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Deskripsi Singkat</label>
+                <textarea rows={2} placeholder="Deskripsi..." value={newUmkm.deskripsi} onChange={(e) => setNewUmkm({ ...newUmkm, deskripsi: e.target.value })} className="w-full border p-2.5 rounded-xl resize-none"></textarea>
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Detail Lengkap</label>
+                <textarea rows={3} placeholder="Penjelasan lengkap..." value={newUmkm.detailLengkap} onChange={(e) => setNewUmkm({ ...newUmkm, detailLengkap: e.target.value })} className="w-full border p-2.5 rounded-xl resize-none"></textarea>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowAddUmkmModal(false)} className="px-4 py-2 bg-slate-200 rounded-xl font-bold">Batal</button>
+                <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Simpan Produk</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL TAMBAH BERITA (ADMIN) --- */}
+      {showAddBeritaModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-lg text-slate-900">Tambah Berita / Mading Baru</h3>
+            <form onSubmit={handleAddBerita} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold mb-1">Judul Berita</label>
+                <input type="text" required placeholder="Judul kegiatan..." value={newBerita.judul} onChange={(e) => setNewBerita({ ...newBerita, judul: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Kategori</label>
+                <input type="text" placeholder="Reboisasi & Konservasi" value={newBerita.kategori} onChange={(e) => setNewBerita({ ...newBerita, kategori: e.target.value })} className="w-full border p-2.5 rounded-xl" />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Kutipan Singkat</label>
+                <textarea rows={2} placeholder="Kutipan..." value={newBerita.kutipan} onChange={(e) => setNewBerita({ ...newBerita, kutipan: e.target.value })} className="w-full border p-2.5 rounded-xl resize-none"></textarea>
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Detail Berita</label>
+                <textarea rows={4} placeholder="Isi detail berita..." value={newBerita.detail} onChange={(e) => setNewBerita({ ...newBerita, detail: e.target.value })} className="w-full border p-2.5 rounded-xl resize-none"></textarea>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowAddBeritaModal(false)} className="px-4 py-2 bg-slate-200 rounded-xl font-bold">Batal</button>
+                <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Publikasikan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
+export default PublicPortal;
