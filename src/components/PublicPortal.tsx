@@ -8,10 +8,13 @@ import {
   Sun, Wind, Bird, ShieldCheck, Cloud,
   Layers, Sliders, Radio, AlertTriangle, CheckCircle, RefreshCw,
   Eye, Compass, Globe, Waves, Flower2, Camera, Home, Menu, User, Gauge,
-  Heart, ExternalLink, Shield
+  Heart, ExternalLink, Shield, BarChart2
 } from 'lucide-react';
 
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts';
+import { 
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line,
+  AreaChart, Area, PieChart, Pie, Cell, Legend 
+} from 'recharts';
 
 // --- STYLES ANIMASI INLINE CSS & TRANSISI SMOOTH POP-UP ---
 const AnimationStyles = () => (
@@ -224,6 +227,28 @@ const DATA_KELAHIRAN_KEMATIAN = [
   { bulan: 'Mei', lahir: 30, mati: 5 },
 ];
 
+// --- DATA STATISTIK PENDUDUK KUSTUMISASI (DESA PASANGGRAHAN) ---
+const DATA_STATISTIK_PASANGGRAHAN_TREND = [
+  { tahun: '2022', total: 20100 },
+  { tahun: '2023', total: 20600 },
+  { tahun: '2024', total: 21100 },
+  { tahun: '2025', total: 21500 },
+  { tahun: '2026', total: 21969 },
+];
+
+const DATA_KOMPOSISI_JK_PASANGGRAHAN = [
+  { tahun: '2022', lakiLaki: 10250, perempuan: 9850 },
+  { tahun: '2023', lakiLaki: 10500, perempuan: 10100 },
+  { tahun: '2024', lakiLaki: 10760, perempuan: 10340 },
+  { tahun: '2025', lakiLaki: 10950, perempuan: 10550 },
+  { tahun: '2026', lakiLaki: 11180, perempuan: 10789 },
+];
+
+const DATA_SEX_RATIO_PASANGGRAHAN = [
+  { name: 'Laki-Laki (50.9%)', value: 11180, color: '#059669' },
+  { name: 'Perempuan (49.1%)', value: 10789, color: '#0d9488' },
+];
+
 const INITIAL_WARGA: WargaData[] = [
   { id: 1, nik: '3273012304890001', nama: 'Budi Santoso', rtRw: 'RT 01 / RW 03', usia: 34, kategoriUsia: 'Produktif', statusBantuan: 'Non-Bantuan' },
   { id: 2, nik: '3273015410650003', nama: 'Asep Saepuloh', rtRw: 'RT 02 / RW 01', usia: 58, kategoriUsia: 'Produktif', statusBantuan: 'Penerima PKH' },
@@ -243,7 +268,7 @@ const INITIAL_WISATA: TempatWisata[] = [
     kategori: 'Wisata Air & Waterfall',
     lokasi: 'Kaki Gunung Manglayang, Sektor Pasanggrahan',
     hargaTiket: 'Rp 10.000 / Orang',
-    gambar: '/curug-cilengkrang-bandung.jpg', // <-- Cukup tulis nama filenya aja diawali '/'
+    gambar: '/curug-cilengkrang-bandung.jpg',
     deskripsi: 'Wisata air terjun ikonik Gunung Manglayang...',
     fiturUtama: [ 
       { label: '6 Air Terjun Alami', icon: <Waves className="w-3.5 h-3.5 text-teal-600" /> },
@@ -269,14 +294,14 @@ const INITIAL_WISATA: TempatWisata[] = [
     ]
   },
   {
-    id: 3, // Sesuaikan ID-nya
-  nama: 'Wisata Alam Gunung Manglayang',
-  kategori: 'Pegunungan & Camping Ground',
-  lokasi: 'Desa Pasanggrahan, Ujungberung, Bandung',
-  hargaTiket: 'Rp 15.000 / Orang',
-  gambar: '/gunung-manglayang.jpg', // <-- Tinggal panggil nama file yang ada di folder public
-  deskripsi: 'Pemandangan indah pegunungan yang asri dengan udara sejuk dan area camping favorit warga Bandung.',
-  fiturUtama: [
+    id: 3,
+    nama: 'Wisata Alam Gunung Manglayang',
+    kategori: 'Pegunungan & Camping Ground',
+    lokasi: 'Desa Pasanggrahan, Ujungberung, Bandung',
+    hargaTiket: 'Rp 15.000 / Orang',
+    gambar: '/gunung-manglayang.jpg',
+    deskripsi: 'Pemandangan indah pegunungan yang asri dengan udara sejuk dan area camping favorit warga Bandung.',
+    fiturUtama: [
       { label: 'Hutan Hujan Tropis', icon: <Trees className="w-3.5 h-3.5 text-emerald-700" /> },
       { label: 'Jalur Edukasi Ekologi', icon: <Mountain className="w-3.5 h-3.5 text-emerald-600" /> },
       { label: 'Panorama City View', icon: <Globe className="w-3.5 h-3.5 text-blue-500" /> },
@@ -284,14 +309,14 @@ const INITIAL_WISATA: TempatWisata[] = [
     ]
   },
   {
-   id: 4, // Sesuaikan ID urutannya
-  nama: 'Bukit Papanggungan',
-  kategori: 'Perbukitan & Sunrise Point',
-  lokasi: 'Kawasan Pasanggrahan, Ujungberung, Bandung',
-  hargaTiket: 'Gratis / Parkir Saja',
-  gambar: '/Bukit-Papanggungan.jpg', // <-- Nama file dari folder public
-  deskripsi: 'Spot foto dan sunrise terbaik dengan pemandangan lautan awan serta panorama pegunungan yang memanjakan mata.',
-  fiturUtama: [
+    id: 4,
+    nama: 'Bukit Papanggungan',
+    kategori: 'Perbukitan & Sunrise Point',
+    lokasi: 'Kawasan Pasanggrahan, Ujungberung, Bandung',
+    hargaTiket: 'Gratis / Parkir Saja',
+    gambar: '/Bukit-Papanggungan.jpg',
+    deskripsi: 'Spot foto dan sunrise terbaik dengan pemandangan lautan awan serta panorama pegunungan yang memanjakan mata.',
+    fiturUtama: [
       { label: 'View Lautan Awan', icon: <Cloud className="w-3.5 h-3.5 text-sky-500" /> },
       { label: 'Spot Sunrise', icon: <Sun className="w-3.5 h-3.5 text-amber-500" /> },
       { label: 'Panorama 360°', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> }
@@ -1039,8 +1064,8 @@ export function PublicPortal() {
       <AnimationStyles />
 
       <div>
-        {/* NAVBAR UTAMA (Mading dan Aparat telah dihapus dari sini agar tidak menumpuk) */}
-        <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-emerald-100/60 px-4 sm:px-6 py-3.5 transition-all duration-300 shadow-sm">
+        {/* NAVBAR UTAMA (Mading & Statistik Dihapus agar Tidak Numpuk) */}
+        <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-emerald-100/60 px-4 sm:px-6 py-3.5 transition-all duration-300 shadow-sm">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-3">
               <LogoKonservasi />
@@ -1054,8 +1079,8 @@ export function PublicPortal() {
               </div>
             </div>
             
-            {/* Navigasi Desktop yang Ringkas (Tanpa Mading & Aparat) */}
-            <div className="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-600">
+            {/* Navigasi Desktop Ringkas & Rapi */}
+            <div className="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-600">
               <a href="#hero" className="hover:text-emerald-700 transition flex items-center gap-1">
                 <Sun className="w-3.5 h-3.5 text-emerald-600" /> Beranda
               </a>
@@ -1099,7 +1124,7 @@ export function PublicPortal() {
             </button>
           </div>
 
-          {/* Menu Dropdown Mobile (Ringkas) */}
+          {/* Menu Dropdown Mobile Ringkas */}
           {isMobileMenuOpen && (
             <div className="lg:hidden mt-3 pt-3 border-t border-emerald-100 flex flex-col space-y-2 px-2 pb-3 font-extrabold text-emerald-900 text-sm bg-white rounded-3xl p-4 shadow-xl animate-fade-in-up">
               <a href="#hero" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
@@ -1273,7 +1298,7 @@ export function PublicPortal() {
               <div className="lg:col-span-5 relative">
                 <div className="relative rounded-[2.5rem] overflow-hidden border-4 border-emerald-100 shadow-xl group">
                   <img 
-                    src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop" 
+                    src="/gunung-manglayang.jpg" 
                     alt="Nuansa Hutan Pinus Pegunungan Pasanggrahan" 
                     className="w-full h-[360px] object-cover group-hover:scale-105 transition duration-500"
                   />
@@ -1406,7 +1431,7 @@ export function PublicPortal() {
           </div>
         </section>
 
-        {/* 🗺️ SECTION PETA: PETA TIDAK BISA DIGESER 🗺️ */}
+        {/* SECTION PETA */}
         <section id="peta" className="py-20 px-6 max-w-7xl mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -1790,6 +1815,119 @@ export function PublicPortal() {
           </div>
         </section>
 
+        {/* 📊 SECTION DASHBOARD STATISTIK PENDUDUK (DIBAWAH MADING) 📊 */}
+        <section id="statistik" className="py-16 px-6 max-w-7xl mx-auto space-y-8 animate-fade-in-up">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-emerald-200 pb-5">
+            <div className="space-y-1">
+              <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center gap-1.5">
+                <BarChart2 className="w-4 h-4 text-emerald-600" /> Data Demografi Terpadu
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2">
+                Dashboard Statistik Penduduk Pasanggrahan
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 font-medium">Visualisasi pertumbuhan populasi &amp; komposisi gender warga secara transparan.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Kartu 1: Trend Total Penduduk Desa Pasanggrahan */}
+            <div className="bg-white p-6 rounded-[2.5rem] border border-emerald-200/80 shadow-sm space-y-4 hover:border-emerald-400 transition">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                    <Sprout className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    Trend Total Penduduk
+                  </h3>
+                </div>
+                <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200">5 Tahun</span>
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={DATA_STATISTIK_PASANGGRAHAN_TREND}>
+                    <defs>
+                      <linearGradient id="colorTotalPasanggrahan" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#059669" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="tahun" stroke="#64748b" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#64748b" fontSize={11} domain={[19500, 22500]} tickLine={false} />
+                    <Tooltip formatter={(value: any) => [`${value.toLocaleString('id-ID')} Jiwa`, 'Total']} />
+                    <Area type="monotone" dataKey="total" stroke="#059669" strokeWidth={3} fillOpacity={1} fill="url(#colorTotalPasanggrahan)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Kartu 2: Komposisi Jenis Kelamin Warga */}
+            <div className="bg-white p-6 rounded-[2.5rem] border border-emerald-200/80 shadow-sm space-y-4 hover:border-emerald-400 transition">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    Komposisi Jenis Kelamin
+                  </h3>
+                </div>
+                <span className="text-[10px] font-extrabold bg-teal-50 text-teal-800 px-2.5 py-1 rounded-full border border-teal-200">2022 - 2026</span>
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={DATA_KOMPOSISI_JK_PASANGGRAHAN} barGap={4}>
+                    <XAxis dataKey="tahun" stroke="#64748b" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#64748b" fontSize={11} domain={[0, 13000]} tickLine={false} />
+                    <Tooltip formatter={(value: any) => [`${value.toLocaleString('id-ID')} Jiwa`]} />
+                    <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                    <Bar dataKey="lakiLaki" name="Laki-Laki" fill="#059669" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="perempuan" name="Perempuan" fill="#0d9488" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Kartu 3: Sex Ratio Kelamin (Saat Ini) */}
+            <div className="bg-white p-6 rounded-[2.5rem] border border-emerald-200/80 shadow-sm space-y-4 hover:border-emerald-400 transition">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                    <Heart className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    Rasio Kelamin (Saat Ini)
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-500">21.969 Jiwa</span>
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={DATA_SEX_RATIO_PASANGGRAHAN}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {DATA_SEX_RATIO_PASANGGRAHAN.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: any) => [`${value.toLocaleString('id-ID')} Jiwa`]} />
+                    <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
         {/* 🏛️ SECTION APARAT KELURAHAN 🏛️ */}
         <section id="aparat" className="py-20 px-6 bg-emerald-50/50 border-y border-emerald-200">
           <div className="max-w-7xl mx-auto space-y-10">
@@ -1920,16 +2058,14 @@ export function PublicPortal() {
 
       </div>
 
-      {/* ========================================================================= */}
-      {/* 🌿 BAGIAN FOOTER YANG TELAH DIPERBARUI & DIPERFESIONALKAN 🌿 */}
-      {/* ========================================================================= */}
+      {/* FOOTER */}
       <footer className="bg-emerald-950 text-emerald-100 pt-16 pb-12 px-6 border-t border-emerald-900 rounded-t-[3.5rem] mt-20 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-900/20 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto space-y-12 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             
-            {/* Kolom 1: Profil & Identitas */}
+            {/* Kolom 1 */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <LogoKonservasi />
@@ -1947,7 +2083,7 @@ export function PublicPortal() {
               </div>
             </div>
 
-            {/* Kolom 2: Tautan Cepat */}
+            {/* Kolom 2 */}
             <div className="space-y-4">
               <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
                 <Compass className="w-4 h-4 text-emerald-400" /> Navigasi Portal
@@ -1961,7 +2097,7 @@ export function PublicPortal() {
               </ul>
             </div>
 
-            {/* Kolom 3: Layanan & Produk */}
+            {/* Kolom 3 */}
             <div className="space-y-4">
               <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
                 <Store className="w-4 h-4 text-emerald-400" /> Layanan &amp; Publik
@@ -1970,12 +2106,13 @@ export function PublicPortal() {
                 <li><a href="#umkm" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Katalog Eko-UMKM Desa</a></li>
                 <li><a href="#cctv" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Live CCTV Pengawasan</a></li>
                 <li><a href="#mading" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Mading &amp; Berita Konservasi</a></li>
+                <li><a href="#statistik" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Statistik Penduduk</a></li>
                 <li><a href="#aparat" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Aparat &amp; Pemerintahan</a></li>
                 <li><a href="#lapornya" className="hover:text-white transition flex items-center gap-1.5"><ChevronRight className="w-3.5 h-3.5 text-emerald-400" /> Lapor Isu Lingkungan</a></li>
               </ul>
             </div>
 
-            {/* Kolom 4: Kontak Resmi */}
+            {/* Kolom 4 */}
             <div className="space-y-4">
               <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
                 <Phone className="w-4 h-4 text-emerald-400" /> Kontak &amp; Alamat
