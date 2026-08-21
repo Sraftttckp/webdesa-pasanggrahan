@@ -8,7 +8,7 @@ import {
   Sun, Wind, Bird, ShieldCheck, Cloud,
   Layers, Sliders, Radio, AlertTriangle, CheckCircle, RefreshCw,
   Eye, Compass, Globe, Waves, Flower2, Camera, Home, Menu, User, Gauge,
-  Heart, ExternalLink, Shield, BarChart2
+  Heart, ExternalLink, Shield, BarChart2, GraduationCap, Activity
 } from 'lucide-react';
 
 import { 
@@ -227,26 +227,26 @@ const DATA_KELAHIRAN_KEMATIAN = [
   { bulan: 'Mei', lahir: 30, mati: 5 },
 ];
 
-// --- DATA STATISTIK PENDUDUK KUSTUMISASI (DESA PASANGGRAHAN) ---
-const DATA_STATISTIK_PASANGGRAHAN_TREND = [
-  { tahun: '2022', total: 20100 },
-  { tahun: '2023', total: 20600 },
-  { tahun: '2024', total: 21100 },
-  { tahun: '2025', total: 21500 },
-  { tahun: '2026', total: 21969 },
+// --- BARU: DATA STATISTIK PENDIDIKAN, KELAHIRAN/KEMATIAN, DAN KATEGORI USIA ---
+const DATA_TINGKAT_PENDIDIKAN = [
+  { jenjang: 'SD / Sederajat', jumlah: 4120 },
+  { jenjang: 'SMP / Sederajat', jumlah: 6480 },
+  { jenjang: 'SMA / SMK', jumlah: 8250 },
+  { jenjang: 'Diploma / S1 / S2', jumlah: 3119 },
 ];
 
-const DATA_KOMPOSISI_JK_PASANGGRAHAN = [
-  { tahun: '2022', lakiLaki: 10250, perempuan: 9850 },
-  { tahun: '2023', lakiLaki: 10500, perempuan: 10100 },
-  { tahun: '2024', lakiLaki: 10760, perempuan: 10340 },
-  { tahun: '2025', lakiLaki: 10950, perempuan: 10550 },
-  { tahun: '2026', lakiLaki: 11180, perempuan: 10789 },
+const DATA_TREN_LAHIR_MATI = [
+  { tahun: '2022', lahir: 142, mati: 45 },
+  { tahun: '2023', lahir: 138, mati: 40 },
+  { tahun: '2024', lahir: 155, mati: 38 },
+  { tahun: '2025', lahir: 148, mati: 42 },
+  { tahun: '2026', lahir: 120, mati: 35 },
 ];
 
-const DATA_SEX_RATIO_PASANGGRAHAN = [
-  { name: 'Laki-Laki (50.9%)', value: 11180, color: '#059669' },
-  { name: 'Perempuan (49.1%)', value: 10789, color: '#0d9488' },
+const DATA_KATEGORI_USIA = [
+  { name: 'Anak-anak (0-17 thn)', value: 5240, color: '#0284c7' },   // Sky Blue
+  { name: 'Usia Produktif (18-59 thn)', value: 14120, color: '#6366f1' }, // Indigo
+  { name: 'Lansia (60+ thn)', value: 2609, color: '#f59e0b' },     // Amber
 ];
 
 const INITIAL_WARGA: WargaData[] = [
@@ -1064,7 +1064,7 @@ export function PublicPortal() {
       <AnimationStyles />
 
       <div>
-        {/* NAVBAR UTAMA (Mading & Statistik Dihapus agar Tidak Numpuk) */}
+        {/* NAVBAR UTAMA (Navigasi Ringkas Tanpa Mading & Statistik) */}
         <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-emerald-100/60 px-4 sm:px-6 py-3.5 transition-all duration-300 shadow-sm">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -1079,7 +1079,7 @@ export function PublicPortal() {
               </div>
             </div>
             
-            {/* Navigasi Desktop Ringkas & Rapi */}
+            {/* Navigasi Desktop */}
             <div className="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-600">
               <a href="#hero" className="hover:text-emerald-700 transition flex items-center gap-1">
                 <Sun className="w-3.5 h-3.5 text-emerald-600" /> Beranda
@@ -1124,7 +1124,7 @@ export function PublicPortal() {
             </button>
           </div>
 
-          {/* Menu Dropdown Mobile Ringkas */}
+          {/* Menu Dropdown Mobile */}
           {isMobileMenuOpen && (
             <div className="lg:hidden mt-3 pt-3 border-t border-emerald-100 flex flex-col space-y-2 px-2 pb-3 font-extrabold text-emerald-900 text-sm bg-white rounded-3xl p-4 shadow-xl animate-fade-in-up">
               <a href="#hero" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-emerald-50 flex items-center gap-2">
@@ -1199,7 +1199,7 @@ export function PublicPortal() {
             <div className="lg:col-span-5 relative animate-fade-in-up">
               <div className="relative rounded-[3rem] overflow-hidden border-8 border-emerald-100 shadow-2xl group">
                 <img 
-                  src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop" 
+                  src="manglayang.jpg" 
                   alt="Panorama Lereng Pegunungan Pasanggrahan" 
                   className="w-full h-[420px] object-cover group-hover:scale-105 transition duration-700"
                 />
@@ -1298,7 +1298,7 @@ export function PublicPortal() {
               <div className="lg:col-span-5 relative">
                 <div className="relative rounded-[2.5rem] overflow-hidden border-4 border-emerald-100 shadow-xl group">
                   <img 
-                    src="/gunung-manglayang.jpg" 
+                    src="kawasan-hutan.jpg" 
                     alt="Nuansa Hutan Pinus Pegunungan Pasanggrahan" 
                     className="w-full h-[360px] object-cover group-hover:scale-105 transition duration-500"
                   />
@@ -1815,110 +1815,107 @@ export function PublicPortal() {
           </div>
         </section>
 
-        {/* 📊 SECTION DASHBOARD STATISTIK PENDUDUK (DIBAWAH MADING) 📊 */}
+        {/* 📊 SECTION STATISTIK PENDUDUK BARU (WARNA & KONTEN BARU) 📊 */}
         <section id="statistik" className="py-16 px-6 max-w-7xl mx-auto space-y-8 animate-fade-in-up">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-emerald-200 pb-5">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-indigo-100 pb-5">
             <div className="space-y-1">
-              <span className="text-xs font-extrabold text-emerald-700 tracking-wider uppercase flex items-center gap-1.5">
-                <BarChart2 className="w-4 h-4 text-emerald-600" /> Data Demografi Terpadu
+              <span className="text-xs font-extrabold text-indigo-600 tracking-wider uppercase flex items-center gap-1.5">
+                <BarChart2 className="w-4 h-4 text-indigo-600" /> Visualisasi Demografi Terpadu
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2">
                 Dashboard Statistik Penduduk Pasanggrahan
               </h2>
             </div>
-            <p className="text-xs text-slate-500 font-medium">Visualisasi pertumbuhan populasi &amp; komposisi gender warga secara transparan.</p>
+            <p className="text-xs text-slate-500 font-medium">Monitoring tingkat pendidikan, rekapitulasi natalitas/mortalitas, dan struktur usia.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Kartu 1: Trend Total Penduduk Desa Pasanggrahan */}
-            <div className="bg-white p-6 rounded-[2.5rem] border border-emerald-200/80 shadow-sm space-y-4 hover:border-emerald-400 transition">
+            {/* KARTU 1: TINGKAT PENDIDIKAN WARGA (Orange & Indigo theme) */}
+            <div className="bg-white p-6 rounded-[2.5rem] border border-amber-200/80 shadow-sm space-y-4 hover:border-amber-400 transition">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                    <Sprout className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                    <GraduationCap className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">
-                    Trend Total Penduduk
+                    Tingkat Pendidikan Warga
                   </h3>
                 </div>
-                <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200">5 Tahun</span>
+                <span className="text-[10px] font-extrabold bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full border border-amber-200">2026</span>
               </div>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={DATA_STATISTIK_PASANGGRAHAN_TREND}>
-                    <defs>
-                      <linearGradient id="colorTotalPasanggrahan" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#059669" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="tahun" stroke="#64748b" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#64748b" fontSize={11} domain={[19500, 22500]} tickLine={false} />
-                    <Tooltip formatter={(value: any) => [`${value.toLocaleString('id-ID')} Jiwa`, 'Total']} />
-                    <Area type="monotone" dataKey="total" stroke="#059669" strokeWidth={3} fillOpacity={1} fill="url(#colorTotalPasanggrahan)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
 
-            {/* Kartu 2: Komposisi Jenis Kelamin Warga */}
-            <div className="bg-white p-6 rounded-[2.5rem] border border-emerald-200/80 shadow-sm space-y-4 hover:border-emerald-400 transition">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">
-                    Komposisi Jenis Kelamin
-                  </h3>
-                </div>
-                <span className="text-[10px] font-extrabold bg-teal-50 text-teal-800 px-2.5 py-1 rounded-full border border-teal-200">2022 - 2026</span>
-              </div>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={DATA_KOMPOSISI_JK_PASANGGRAHAN} barGap={4}>
-                    <XAxis dataKey="tahun" stroke="#64748b" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#64748b" fontSize={11} domain={[0, 13000]} tickLine={false} />
-                    <Tooltip formatter={(value: any) => [`${value.toLocaleString('id-ID')} Jiwa`]} />
-                    <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                    <Bar dataKey="lakiLaki" name="Laki-Laki" fill="#059669" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="perempuan" name="Perempuan" fill="#0d9488" radius={[6, 6, 0, 0]} />
+                  <BarChart data={DATA_TINGKAT_PENDIDIKAN} layout="vertical" margin={{ left: 20 }}>
+                    <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} />
+                    <YAxis dataKey="jenjang" type="category" stroke="#475569" fontSize={10} tickLine={false} width={80} />
+                    <Tooltip formatter={(val: any) => [`${val.toLocaleString('id-ID')} Orang`, 'Jumlah']} />
+                    <Bar dataKey="jumlah" fill="#f59e0b" radius={[0, 8, 8, 0]} name="Warga" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Kartu 3: Sex Ratio Kelamin (Saat Ini) */}
-            <div className="bg-white p-6 rounded-[2.5rem] border border-emerald-200/80 shadow-sm space-y-4 hover:border-emerald-400 transition">
+            {/* KARTU 2: TREN KELAHIRAN VS KEMATIAN (Rose & Emerald Theme) */}
+            <div className="bg-white p-6 rounded-[2.5rem] border border-rose-200/80 shadow-sm space-y-4 hover:border-rose-400 transition">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-                    <Heart className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold">
+                    <Activity className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">
-                    Rasio Kelamin (Saat Ini)
+                    Kelahiran vs Kematian
+                  </h3>
+                </div>
+                <span className="text-[10px] font-extrabold bg-rose-50 text-rose-800 px-2.5 py-1 rounded-full border border-rose-200">5 Tahun</span>
+              </div>
+
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={DATA_TREN_LAHIR_MATI} barGap={4}>
+                    <XAxis dataKey="tahun" stroke="#64748b" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
+                    <Tooltip formatter={(value: any) => [`${value} Jiwa`]} />
+                    <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                    <Bar dataKey="lahir" name="Kelahiran" fill="#059669" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="mati" name="Kematian" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* KARTU 3: KATEGORI KELOMPOK USIA (Blue & Indigo Theme) */}
+            <div className="bg-white p-6 rounded-[2.5rem] border border-sky-200/80 shadow-sm space-y-4 hover:border-sky-400 transition">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    Struktur Kategori Usia
                   </h3>
                 </div>
                 <span className="text-[10px] font-mono font-bold text-slate-500">21.969 Jiwa</span>
               </div>
+
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={DATA_SEX_RATIO_PASANGGRAHAN}
+                      data={DATA_KATEGORI_USIA}
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      paddingAngle={3}
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={4}
                       dataKey="value"
                     >
-                      {DATA_SEX_RATIO_PASANGGRAHAN.map((entry, index) => (
+                      {DATA_KATEGORI_USIA.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: any) => [`${value.toLocaleString('id-ID')} Jiwa`]} />
+                    <Tooltip formatter={(val: any) => [`${val.toLocaleString('id-ID')} Jiwa`]} />
                     <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                   </PieChart>
                 </ResponsiveContainer>
